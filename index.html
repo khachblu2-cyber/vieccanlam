@@ -111,6 +111,8 @@
     body *{visibility:hidden;}
     #printArea, #printArea *{visibility:visible;}
     #printArea{display:block !important;position:absolute;top:0;left:0;width:100%;}
+    #printArea .money-table-wrap{overflow:visible !important;}
+    #printArea table.money-grid{min-width:0 !important;width:100% !important;}
     @page{ size: A4; margin: 12mm; }
   }
 </style>
@@ -129,7 +131,7 @@
     <button class="tab-btn" id="tabBtnLedger" onclick="switchTab('ledger')">💳 Sổ thu chi</button>
   </div>
 </div>
-<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.2.0</div>
+<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.2.1</div>
 
 <!-- TASKS TAB -->
 <div id="tasksTab">
@@ -1277,24 +1279,30 @@ function printMoneyDetail(){
   printArea.querySelectorAll('.no-export').forEach(n=> n.style.display='none');
   window.print();
 }
-function withHiddenExportControls(el, fn){
-  const hidden = el.querySelectorAll('.no-export');
-  hidden.forEach(n=> n.style.display = 'none');
-  return fn().finally(()=>{ hidden.forEach(n=> n.style.display = ''); });
+function buildOffscreenClone(el){
+  const clone = document.createElement('div');
+  clone.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff;padding:16px;width:820px;font-family:inherit;';
+  clone.innerHTML = el.innerHTML;
+  clone.querySelectorAll('.no-export').forEach(n=> n.remove());
+  clone.querySelectorAll('.money-table-wrap').forEach(w=>{ w.style.overflow='visible'; });
+  document.body.appendChild(clone);
+  return clone;
 }
 let lastPreviewBlob = null;
 let lastPreviewFilename = 'phieu.png';
 function viewAndShareCapture(elId, filename){
   const el = document.getElementById(elId);
   if(!el || typeof html2canvas === 'undefined'){ alert('Không tải được công cụ xuất ảnh, kiểm tra lại kết nối mạng rồi thử lại.'); return; }
-  withHiddenExportControls(el, ()=> html2canvas(el, { backgroundColor:'#ffffff', scale:2 }).then(canvas=>{
+  const clone = buildOffscreenClone(el);
+  html2canvas(clone, { backgroundColor:'#ffffff', scale:2 }).then(canvas=>{
+    clone.remove();
     canvas.toBlob(blob=>{
       lastPreviewBlob = blob;
       lastPreviewFilename = filename;
       document.getElementById('imgPreviewTag').src = URL.createObjectURL(blob);
       document.getElementById('imgPreviewOverlay').classList.remove('hidden');
     }, 'image/png');
-  })).catch(err=>{ alert('Không tạo được ảnh xem trước: ' + String((err&&err.message)||err)); });
+  }).catch(err=>{ clone.remove(); alert('Không tạo được ảnh xem trước: ' + String((err&&err.message)||err)); });
 }
 function closeImgPreview(){
   document.getElementById('imgPreviewOverlay').classList.add('hidden');
@@ -1315,17 +1323,21 @@ async function shareImgPreview(){
 function captureElementAsImage(elId, filename){
   const el = document.getElementById(elId);
   if(!el || typeof html2canvas === 'undefined'){ alert('Không tải được công cụ xuất ảnh, kiểm tra lại kết nối mạng rồi thử lại.'); return; }
-  withHiddenExportControls(el, ()=> html2canvas(el, { backgroundColor:'#ffffff', scale:2 }).then(canvas=>{
+  const clone = buildOffscreenClone(el);
+  html2canvas(clone, { backgroundColor:'#ffffff', scale:2 }).then(canvas=>{
+    clone.remove();
     const link = document.createElement('a');
     link.download = filename;
     link.href = canvas.toDataURL('image/png');
     link.click();
-  })).catch(err=>{ alert('Xuất ảnh thất bại: ' + String((err&&err.message)||err)); });
+  }).catch(err=>{ clone.remove(); alert('Xuất ảnh thất bại: ' + String((err&&err.message)||err)); });
 }
 function captureElementAsPdf(elId, filename){
   const el = document.getElementById(elId);
   if(!el || typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){ alert('Không tải được công cụ xuất PDF, kiểm tra lại kết nối mạng rồi thử lại.'); return; }
-  withHiddenExportControls(el, ()=> html2canvas(el, { backgroundColor:'#ffffff', scale:2 }).then(canvas=>{
+  const clone = buildOffscreenClone(el);
+  html2canvas(clone, { backgroundColor:'#ffffff', scale:2 }).then(canvas=>{
+    clone.remove();
     const { jsPDF } = window.jspdf;
     const imgData = canvas.toDataURL('image/png');
     const pxToMm = 0.264583;
@@ -1334,7 +1346,7 @@ function captureElementAsPdf(elId, filename){
     const pdf = new jsPDF({ orientation: wMm > hMm ? 'l' : 'p', unit: 'mm', format: [wMm, hMm] });
     pdf.addImage(imgData, 'PNG', 0, 0, wMm, hMm);
     pdf.save(filename);
-  })).catch(err=>{ alert('Xuất PDF thất bại: ' + String((err&&err.message)||err)); });
+  }).catch(err=>{ clone.remove(); alert('Xuất PDF thất bại: ' + String((err&&err.message)||err)); });
 }
 
 /* ---- Nhập số: dấu phẩy hiện ngay lúc gõ, nhưng việc chèn dấu phẩy được hoãn 1 khung hình
