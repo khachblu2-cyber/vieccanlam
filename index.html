@@ -150,7 +150,7 @@
     <button class="tab-btn" id="tabBtnLedger" onclick="switchTab('ledger')">💳 Sổ thu chi</button>
   </div>
 </div>
-<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.3.1</div>
+<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.3.2</div>
 
 <!-- TASKS TAB -->
 <div id="tasksTab">
@@ -966,16 +966,22 @@ function printViaNewWindow(el, title){
   win.document.open();
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
     <style>
-      body{margin:0;padding:14mm;font-family:'Times New Roman', Times, serif;color:#1B2430;}
+      body{margin:0;padding:0;font-family:'Times New Roman', Times, serif;color:#1B2430;}
+      .print-content{padding:14mm;}
       table.money-grid{table-layout:auto;width:100%;border-collapse:collapse;font-size:12pt;}
       table.money-grid th, table.money-grid td{font-family:'Times New Roman', Times, serif;padding:5pt 7pt;border:0.7pt solid #444;}
       table.money-grid th{background:#1B2430;color:#fff;font-size:11pt;}
       table.money-grid td.right{text-align:right;white-space:nowrap;}
       table.money-grid td.left{text-align:left;}
       .font-display{font-family:'Times New Roman', Times, serif;font-size:19px;font-weight:700;text-align:center;}
+      #closePrintBtn{position:fixed;top:12px;right:12px;z-index:9;background:#1B2430;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:sans-serif;}
       @page{ size:A4; margin:14mm; }
+      @media print{ #closePrintBtn{ display:none !important; } }
     </style>
-  </head><body>${clone.innerHTML}</body></html>`);
+  </head><body>
+    <button id="closePrintBtn" onclick="window.close()">✕ Đóng</button>
+    <div class="print-content">${clone.innerHTML}</div>
+  </body></html>`);
   win.document.close();
   const doPrint = ()=>{ win.focus(); win.print(); };
   win.onload = doPrint;
