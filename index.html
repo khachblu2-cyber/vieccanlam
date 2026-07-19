@@ -150,7 +150,7 @@
     <button class="tab-btn" id="tabBtnLedger" onclick="switchTab('ledger')">💳 Sổ thu chi</button>
   </div>
 </div>
-<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.3.3</div>
+<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.3.4</div>
 
 <!-- TASKS TAB -->
 <div id="tasksTab">
@@ -967,7 +967,7 @@ function printViaNewWindow(el, title){
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
     <style>
       body{margin:0;padding:0;font-family:'Times New Roman', Times, serif;color:#1B2430;}
-      .print-content{padding:10mm;}
+      .print-content{width:190mm;max-width:190mm;margin:0 auto;padding:0;box-sizing:border-box;}
       table.money-grid{table-layout:auto;width:auto;border-collapse:collapse;font-size:12pt;}
       table.money-grid th, table.money-grid td{font-family:'Times New Roman', Times, serif;padding:5pt 9pt;border:0.7pt solid #444;white-space:nowrap;}
       table.money-grid th{background:#1B2430;color:#fff;font-size:11pt;}
@@ -986,10 +986,11 @@ function printViaNewWindow(el, title){
         var wrap = document.getElementById('printContentWrap');
         var table = wrap.querySelector('table.money-grid');
         if(table){
+          table.style.transform = 'none';
           var available = wrap.clientWidth;
           var natural = table.scrollWidth;
           if(natural > available){
-            var scale = available / natural;
+            var scale = (available / natural) * 0.97;
             table.style.transformOrigin = 'top left';
             table.style.transform = 'scale(' + scale + ')';
             wrap.style.height = (table.scrollHeight * scale) + 'px';
