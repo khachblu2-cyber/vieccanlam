@@ -92,7 +92,7 @@
   .section-title{font-size:11px;letter-spacing:1px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;}
   .ledger-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);}
   .money-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;border:1px solid var(--line);}
-  table.money-grid{width:100%;border-collapse:collapse;table-layout:fixed;min-width:736px;font-size:13px;}
+  table.money-grid{width:100%;border-collapse:collapse;table-layout:auto;min-width:736px;font-size:13px;}
   table.money-grid th{background:var(--ink);color:#fff;padding:8px 6px;text-align:center;font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap;}
   table.money-grid td{border-bottom:1px solid var(--line);padding:0;text-align:center;background:#fff;}
   table.money-grid td input,table.money-grid td select{border:none;width:100%;padding:7px 6px;font-size:13px;background:transparent;color:var(--ink);font-family:inherit;}
@@ -150,7 +150,7 @@
     <button class="tab-btn" id="tabBtnLedger" onclick="switchTab('ledger')">💳 Sổ thu chi</button>
   </div>
 </div>
-<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.3.0</div>
+<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.3.1</div>
 
 <!-- TASKS TAB -->
 <div id="tasksTab">
@@ -928,7 +928,7 @@ function renderMoneySimpleSummary(){
     <div class="font-display" style="font-size:19px;font-weight:600;text-align:center;margin-bottom:2px;">TỔNG HỢP</div>
     <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;">${list.length} khoản · Người nhận: ${escapeHtml(receiver)}</div>
     <div class="money-table-wrap">
-      <table class="money-grid" style="table-layout:fixed;width:100%;min-width:520px;">
+      <table class="money-grid" style="table-layout:auto;width:100%;min-width:520px;">
         <thead><tr><th style="width:7%;">STT</th><th style="width:14%;">Ngày tháng</th><th style="width:27%;">Diễn Giải</th><th style="width:26%;">Số tiền</th><th style="width:18%;">Ghi Chú</th><th class="no-export" style="width:8%;"></th></tr></thead>
         <tbody>${bodyRows}
           <tr style="background:#FFEB3B;"><td colspan="3" style="text-align:center;font-weight:800;font-size:16px;">Tổng Tiền</td><td colspan="2" style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:19px;color:#C9472E;">${formatNumber(total)}</td><td class="no-export"></td></tr>
@@ -957,13 +957,34 @@ function exportMoneySummaryExcel(){
 function viewMoneySummaryImage(){
   viewAndShareCapture('moneySummaryCapture', `tong-hop-${new Date().toISOString().slice(0,10)}.png`);
 }
+function printViaNewWindow(el, title){
+  if(!el) return;
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('.no-export').forEach(n=>n.remove());
+  const win = window.open('', '_blank');
+  if(!win){ alert('Trình duyệt đang chặn cửa sổ in — vui lòng cho phép popup cho trang này rồi thử lại.'); return; }
+  win.document.open();
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+    <style>
+      body{margin:0;padding:14mm;font-family:'Times New Roman', Times, serif;color:#1B2430;}
+      table.money-grid{table-layout:auto;width:100%;border-collapse:collapse;font-size:12pt;}
+      table.money-grid th, table.money-grid td{font-family:'Times New Roman', Times, serif;padding:5pt 7pt;border:0.7pt solid #444;}
+      table.money-grid th{background:#1B2430;color:#fff;font-size:11pt;}
+      table.money-grid td.right{text-align:right;white-space:nowrap;}
+      table.money-grid td.left{text-align:left;}
+      .font-display{font-family:'Times New Roman', Times, serif;font-size:19px;font-weight:700;text-align:center;}
+      @page{ size:A4; margin:14mm; }
+    </style>
+  </head><body>${clone.innerHTML}</body></html>`);
+  win.document.close();
+  const doPrint = ()=>{ win.focus(); win.print(); };
+  win.onload = doPrint;
+  setTimeout(doPrint, 400);
+}
 function printMoneySummary(){
   const el = document.getElementById('moneySummaryCapture');
-  const printArea = document.getElementById('printArea');
-  if(!el || !printArea) return;
-  printArea.innerHTML = el.innerHTML;
-  printArea.querySelectorAll('.no-export').forEach(n=> n.style.display='none');
-  window.print();
+  if(!el) return;
+  printViaNewWindow(el, 'Tổng hợp');
 }
 
 /* ---- Chi tiền (nhập liệu nhiều dòng rồi lưu) ---- */
@@ -1231,7 +1252,7 @@ function renderMoneyDetail(){
     <div class="font-display" style="font-size:19px;font-weight:600;text-align:center;margin-bottom:2px;">SỔ CHI TIỀN</div>
     <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;">${rows.length} khoản · Người: ${escapeHtml(receiver)}</div>
     <div class="money-table-wrap">
-      <table class="money-grid" style="table-layout:fixed;width:100%;min-width:620px;">
+      <table class="money-grid" style="table-layout:auto;width:100%;min-width:620px;">
         <thead><tr><th style="width:6%;">STT</th><th style="width:13%;">Ngày tháng</th><th style="width:29%;">Diễn Giải</th><th style="width:15%;">Nợ</th><th style="width:15%;">Có</th><th style="width:16%;">Luỹ kế</th><th class="no-export" style="width:6%;"></th></tr></thead>
         <tbody>${openingRow}${bodyRows}
           <tr style="background:#FFEB3B;">
@@ -1292,11 +1313,8 @@ function viewMoneyDetailImage(){
 }
 function printMoneyDetail(){
   const el = document.getElementById('moneyDetailCapture');
-  const printArea = document.getElementById('printArea');
-  if(!el || !printArea) return;
-  printArea.innerHTML = el.innerHTML;
-  printArea.querySelectorAll('.no-export').forEach(n=> n.style.display='none');
-  window.print();
+  if(!el) return;
+  printViaNewWindow(el, 'Sổ chi tiền');
 }
 function buildOffscreenClone(el){
   const clone = document.createElement('div');
