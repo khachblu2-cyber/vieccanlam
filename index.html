@@ -18,6 +18,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js" defer></script>
 <style>
   :root{
     --ink:#1B2430; --paper:#F2F3F6; --card:#FFFFFF; --blue:#2857A6;
@@ -73,7 +74,7 @@
   .snooze-quick button{font-size:12px;font-weight:500;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;}
   .empty-state{text-align:center;padding:48px 20px;color:var(--muted);}
   .empty-state .t{font-size:15px;font-weight:500;color:var(--ink);margin-bottom:4px;}
-  .composer{position:fixed;bottom:70px;left:0;right:0;background:rgba(242,243,246,.95);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 20px calc(14px + env(safe-area-inset-bottom));}
+  .composer{position:fixed;bottom:0;left:0;right:0;background:rgba(242,243,246,.95);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 20px calc(14px + env(safe-area-inset-bottom));}
   .composer-inner{max-width:480px;margin:0 auto;}
   @media (min-width:760px){ .composer-inner{max-width:840px;} }
   @media (min-width:1100px){ .composer-inner{max-width:1000px;} }
@@ -150,7 +151,7 @@
     <button class="tab-btn" id="tabBtnLedger" onclick="switchTab('ledger')">💳 Sổ thu chi</button>
   </div>
 </div>
-<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.3.4</div>
+<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.4.3</div>
 
 <!-- TASKS TAB -->
 <div id="tasksTab">
@@ -186,7 +187,7 @@
   </div>
   </div>
 
-  <div class="wrap" id="taskListWrap" style="padding-top:16px;padding-bottom:180px;"></div>
+  <div class="wrap" id="taskListWrap" style="padding-top:16px;padding-bottom:120px;"></div>
 
   <div class="composer">
     <div class="composer-inner">
@@ -333,6 +334,9 @@ window.firebaseConfig = {
 };
 let fsDb = null;
 let fsReady = false;
+let vcMessaging = null;
+// ⚠️ Dán VAPID key lấy trong Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
+const VC_VAPID_KEY = "BOZk5fPcJ0V9uJl14EGIeTg8GGf2JIJpHlXDhfIYknhl0Je2I7wgoVjvDqFbsDwdwzkcoHQRgr8ibfN7cTXOze0";
 let firestoreListeners = [];
 let cloudSyncTimer = null;
 let lastSyncedCloud = { tasks: [], ledger: null };
@@ -370,6 +374,7 @@ async function cloudInit(){
     firebase.initializeApp(window.firebaseConfig);
     await firebase.auth().signInAnonymously();
     fsDb = firebase.firestore();
+    setupVcMessaging();
 
     const qs = await fsDb.collection("tasks").get();
     const cloudTasks = qs.docs.map(d=>d.data());
@@ -1560,15 +1565,38 @@ function updateNotifBtn(){
   if(Notification.permission === "granted"){ btn.textContent = "🔔"; btn.title = "Đã bật thông báo khi quá hạn"; }
   else{ btn.textContent = "🔕"; btn.title = "Bấm để bật thông báo khi quá hạn"; }
 }
+let vcSwRegistration = null;
+function setupVcMessaging(){
+  if(!firebase.messaging || !firebase.messaging.isSupported || !firebase.messaging.isSupported()){ return; }
+  try{
+    vcMessaging = firebase.messaging();
+    navigator.serviceWorker.register('./firebase-messaging-sw.js')
+      .then(reg=>{ vcSwRegistration = reg; })
+      .catch(e=>console.warn("SW đăng ký lỗi:", e));
+  }catch(e){ console.warn("Messaging không khả dụng:", e); }
+}
 function requestNotificationPermission(){
   if(!("Notification" in window)){
     alert("Trình duyệt/thiết bị này không hỗ trợ thông báo trình duyệt (thường gặp trên iPhone/Safari). Bạn vẫn có thể xem việc quá hạn qua ô đỏ 'quá hạn' trên màn hình.");
     return;
   }
-  Notification.requestPermission().then(p=>{
+  Notification.requestPermission().then(async p=>{
     updateNotifBtn();
     if(p==="granted"){
-      new Notification("Đã bật thông báo", { body: "Bạn sẽ được nhắc khi có việc quá hạn mà chưa hoàn thành. Cần giữ tab này mở." });
+      new Notification("Đã bật thông báo", { body: "Bạn sẽ được nhắc khi có việc quá hạn hoặc chưa xong sau 4 giờ — kể cả khi đóng app." });
+      // Đăng ký thêm thông báo đẩy (chạy cả khi đóng app), nếu trình duyệt hỗ trợ
+      if(vcMessaging && fsDb){
+        try{
+          const opts = { vapidKey: VC_VAPID_KEY };
+          if(vcSwRegistration) opts.serviceWorkerRegistration = vcSwRegistration;
+          const token = await vcMessaging.getToken(opts);
+          if(token){
+            await fsDb.collection('viec_fcmtokens').doc(token).set({
+              token, capNhat: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        }catch(e){ console.warn("Không lấy được token đẩy:", e); }
+      }
     }else if(p==="denied"){
       alert("Bạn đã từ chối quyền thông báo. Muốn bật lại, vào cài đặt trình duyệt cho phép thông báo cho trang này.");
     }
