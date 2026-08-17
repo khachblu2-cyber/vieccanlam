@@ -1,3 +1,35 @@
+<!--
+==================================================================
+  VIỆC CẦN LÀM & SỔ THU CHI — V1.5.1  (17/08/2026)
+  Tệp gốc: Viec-can-lam-V1_4_0.html (md5 25fb19435c217ba4b838579757587774)
+------------------------------------------------------------------
+  THAY ĐỔI SO VỚI V1.4.0
+  1. Giao diện: nền trắng xám #FAFAFA, màu be #F2E9D8 chỉ dùng cho
+     mục đang chọn và dòng tổng. Font Be Vietnam Pro + JetBrains Mono
+     cho số. Cỡ chữ tăng (tên việc 17px, bảng 15px, số tiền 17px).
+  2. Mở full màn hình (bỏ giới hạn 480/840/1000px, tối đa 1500px).
+  3. Tab Việc cần làm: danh sách rộng hết màn hình (bỏ cột phải).
+     V1.5.1: thanh nhập trở lại ĐÁY màn hình nhưng chỉ cao 44px —
+     nút ⚙ + ô nhập + nút ＋. Bấm ⚙ thì bảng tuỳ chọn bung lên chia
+     2 cột; thêm việc xong tự thu lại.
+  4. Nhắc việc chuyên nghiệp hơn: hạn chót nhanh (6 mốc), NHẮC TRƯỚC HẠN,
+     NHẮC LẠI KHI CHƯA XONG, lặp lại 7 kiểu, ưu tiên 4 mức, nhãn phân loại.
+  5. SỬA LỖI NHẮC SAI: quy tắc "nhắc sau 4 giờ" giờ CHỈ áp dụng cho việc
+     KHÔNG đặt hạn. Việc đã đặt hạn (vd 8h sáng mai) chỉ nhắc theo hạn.
+     >> Hàm checkTaskRemindersViec trong index.js (Cloud Functions) vẫn
+        còn quy tắc cũ, CẦN SỬA THEO để thông báo đẩy khớp với app.
+  6. Sổ thu chi: thêm mục DANH SÁCH TỔNG (tất cả mọi người: dư đầu kỳ,
+     tổng đưa, tổng nhận, phát sinh, luỹ kế, số GD, GD gần nhất) + 5 ô
+     số liệu tổng + xuất Excel/ảnh/in A4. Thêm khối "Giao dịch đã lưu".
+  7. Ô nhập số tiền trên điện thoại: bảng tự đổi thành thẻ, ô tiền rộng
+     hết màn hình cao 58px cỡ chữ 24px, có dòng ĐỌC SỐ BẰNG CHỮ và
+     nút cộng nhanh +1/+10/+100 triệu.
+  8. Đã dán VAPID key thật (trước đó còn là DÁN_VAPID_KEY_TẠI_ĐÂY).
+------------------------------------------------------------------
+  CÒN LẠI PHẢI LÀM: upload firebase-messaging-sw.js cùng thư mục;
+  sửa index.js cho khớp mục 5; tối ưu thêm giao diện điện thoại.
+==================================================================
+-->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -11,7 +43,8 @@
 <meta name="apple-mobile-web-app-title" content="Việc cần làm">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Việc cần làm & Sổ thu chi</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
@@ -21,117 +54,198 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js" defer></script>
 <style>
   :root{
-    --ink:#1B2430; --paper:#F2F3F6; --card:#FFFFFF; --blue:#2857A6;
-    --amber:#E4A335; --rust:#C9472E; --moss:#3F7A5C; --line:#E2E4E9; --muted:#6B7280;
+    --ink:#1F1F1F; --paper:#FAFAFA; --card:#FFFFFF; --line:#E7E7E5; --line2:#DFDFDD;
+    --muted:#818181; --muted2:#969696; --soft:#F5F5F4;
+    --be:#F2E9D8; --be-line:#E1D5BC; --be-text:#6E5A31; --be-strong:#F5EAD6;
+    --blue:#2857A6; --amber:#B07C1E; --rust:#C0492E; --moss:#3F7A5C;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;}
-  .font-display{font-family:'Fraunces',Georgia,serif;}
-  .font-mono{font-family:'IBM Plex Mono',monospace;}
-  input:focus,textarea:focus{outline:none;border-color:var(--blue) !important;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Be Vietnam Pro',system-ui,sans-serif;font-size:15px;-webkit-text-size-adjust:100%;}
+  .font-display{font-family:'Be Vietnam Pro',system-ui,sans-serif;font-weight:700;letter-spacing:-.2px;}
+  .font-mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--ink) !important;}
   button{font-family:inherit;}
   .tap{transition:transform .08s ease,opacity .15s ease;}
-  .tap:active{transform:scale(.96);}
-  .wrap{max-width:480px;margin:0 auto;padding:0 20px;}
-  @media (min-width:760px){
-    .wrap{max-width:840px;}
-    .composer{left:0;right:0;}
-    body{background:linear-gradient(var(--paper),var(--paper));}
-  }
-  @media (min-width:1100px){ .wrap{max-width:1000px;} }
-  .tabs{position:sticky;top:0;z-index:10;background:rgba(242,243,246,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
-  #taskStickyHeader{position:sticky;z-index:9;background:var(--paper);border-bottom:1px solid var(--line);}
-  .tabs-row{display:flex;}
-  .tab-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:13px 8px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-weight:600;font-size:13.5px;cursor:pointer;}
-  .tab-btn.active{color:var(--ink);border-bottom-color:var(--ink);}
+  .tap:active{transform:scale(.97);}
   .hidden{display:none !important;}
-  .chip-row{display:flex;gap:8px;margin-top:16px;}
-  .chip{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;}
-  .chip-top{display:flex;align-items:center;gap:6px;}
-  .dot{width:7px;height:7px;border-radius:50%;}
-  .chip-val{font-size:18px;font-weight:600;}
-  .chip-label{font-size:11px;color:var(--muted);margin-top:2px;}
-  .filters{display:flex;gap:6px;flex-wrap:wrap;padding:4px 0 0;}
-  .filter-btn{padding:6px 12px;border-radius:20px;font-size:13px;font-weight:500;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;}
-  .filter-btn.active{border-color:var(--ink);background:var(--ink);color:#fff;}
-  .group-label{font-size:11px;letter-spacing:1px;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:10px;}
-  .task-card{background:var(--card);border-radius:14px;border:1px solid var(--line);padding:12px 14px;margin-bottom:8px;}
-  .task-card.done{opacity:.6;}
-  .task-row{display:flex;align-items:flex-start;gap:10px;}
-  .check-btn{flex-shrink:0;width:24px;height:24px;border-radius:50%;border:2px solid var(--blue);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:1px;}
+  .wrap{max-width:1500px;margin:0 auto;padding:0 24px;}
+  @media (max-width:820px){ .wrap{padding:0 13px;} }
+  @media (max-width:820px){ .desk-only{display:none !important;} }
+  @media (min-width:821px){ .mob-only{display:none !important;} }
+
+  /* ===== Thanh trên cùng ===== */
+  .topbar{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);}
+  .topbar-row{display:flex;align-items:center;gap:18px;height:62px;}
+  .brand{font-size:19px;font-weight:700;white-space:nowrap;}
+  .tabs-row{display:flex;gap:6px;}
+  .tab-btn{padding:9px 20px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--muted);font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;}
+  .tab-btn.active{background:var(--be);color:var(--be-text);border-color:var(--be-line);}
+  .top-spacer{flex:1;}
+  .top-btns{display:flex;gap:6px;align-items:center;}
+  .icon-sm-btn{width:38px;height:38px;border-radius:9px;border:1px solid var(--line);background:#fff;color:#6A6A6A;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;}
+  .ver-label{font-size:11.5px;color:var(--muted2);white-space:nowrap;}
+  @media (max-width:820px){
+    .topbar-row{height:auto;flex-wrap:wrap;gap:8px;padding:9px 0;}
+    .brand{font-size:16px;width:100%;}
+    .tab-btn{font-size:14px;padding:8px 14px;}
+  }
+
+  /* ===== Thẻ thống kê ===== */
+  .stats{display:flex;gap:13px;margin:18px 0;}
+  .stat{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px;min-width:0;}
+  .stat .v{font-size:27px;font-weight:700;line-height:1.1;}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-top:3px;letter-spacing:.3px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:3px;}
+  @media (max-width:820px){
+    .stats{flex-wrap:wrap;gap:9px;margin:12px 0;}
+    .stat{flex:1 1 46%;padding:10px 12px;}
+    .stat .v{font-size:22px;} .stat .l{font-size:11.5px;}
+  }
+
+  /* ===== Bố cục 2 cột tab việc ===== */
+  .task-main{width:100%;padding-bottom:104px;}
+  .dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(250,250,250,.97);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:11px 0 calc(13px + env(safe-area-inset-bottom));}
+  .opt-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;margin-bottom:10px;max-height:56vh;overflow-y:auto;}
+  .opt-cols{display:flex;gap:28px;}
+  .opt-col{flex:1;min-width:0;}
+  .opt-col .sec-label:first-child{margin-top:0;}
+  @media (max-width:820px){ .opt-cols{flex-direction:column;gap:0;} .opt-panel{max-height:62vh;} .task-main{padding-bottom:92px;} }
+
+  .filters{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .filter-btn{padding:8px 15px;border-radius:20px;font-size:14px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;}
+  .filter-btn.active{background:var(--be);color:var(--be-text);border-color:var(--be-line);}
+  .search-box{margin-left:auto;width:280px;font-size:14px;padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:#fff;}
+  @media (max-width:820px){ .search-box{margin-left:0;width:100%;} }
+
+  .group-label{font-size:12px;font-weight:700;letter-spacing:1.3px;color:var(--muted2);padding:2px 2px 8px;display:flex;align-items:center;gap:10px;}
+  .group-line{flex:1;height:1px;background:var(--line);}
+
+  .task-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:9px;display:flex;gap:13px;align-items:flex-start;}
+  .task-card.overdue{border-left:4px solid var(--rust);}
+  .task-card.done{background:#FAFAFA;opacity:.75;}
+  .check-btn{flex-shrink:0;width:23px;height:23px;border-radius:50%;border:2px solid #C2C2C2;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:2px;font-size:13px;padding:0;}
   .check-btn.done{background:var(--moss);border-color:var(--moss);color:#fff;}
-  .task-title{font-size:15px;font-weight:500;line-height:1.35;word-break:break-word;}
-  .task-title.done{text-decoration:line-through;color:var(--muted);}
-  .task-notes{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4;word-break:break-word;}
-  .task-meta{font-size:11.5px;color:var(--muted);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;}
-  .pr-badge{font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;letter-spacing:.5px;margin-right:6px;}
-  .del-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;flex-shrink:0;}
-  .task-actions{display:flex;gap:8px;margin-top:10px;margin-left:34px;}
-  .btn-done{font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:8px;border:none;background:var(--moss);color:#fff;cursor:pointer;}
-  .btn-snooze{font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;}
-  .snooze-panel{margin-top:10px;margin-left:34px;padding:10px;background:var(--paper);border-radius:10px;display:flex;flex-direction:column;gap:8px;}
-  .snooze-quick{display:flex;gap:6px;flex-wrap:wrap;}
-  .snooze-quick button{font-size:12px;font-weight:500;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;}
-  .empty-state{text-align:center;padding:48px 20px;color:var(--muted);}
-  .empty-state .t{font-size:15px;font-weight:500;color:var(--ink);margin-bottom:4px;}
-  .composer{position:fixed;bottom:70px;left:0;right:0;background:rgba(242,243,246,.95);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 20px calc(14px + env(safe-area-inset-bottom));}
-  .composer-inner{max-width:480px;margin:0 auto;}
-  @media (min-width:760px){ .composer-inner{max-width:840px;} }
-  @media (min-width:1100px){ .composer-inner{max-width:1000px;} }
-  .composer-expand{margin-bottom:8px;padding:10px;background:#fff;border-radius:12px;border:1px solid var(--line);display:flex;flex-direction:column;gap:8px;}
-  .row-flex{display:flex;gap:6px;}
-  input[type=text],input[type=datetime-local],textarea{font-size:13px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);width:100%;}
-  .pill-btn{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;white-space:nowrap;}
-  .main-input-row{display:flex;gap:8px;align-items:center;}
-  .icon-btn{flex-shrink:0;width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;}
-  .icon-btn.primary{background:var(--ink);color:#fff;border:none;}
-  .title-input{flex:1;font-size:15px;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);}
-  .header-top{display:flex;align-items:center;justify-content:space-between;}
-  .icon-sm-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
-  .top-btns{display:flex;gap:6px;}
-  .section-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 14px 12px;}
-  .section-title{font-size:11px;letter-spacing:1px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;}
-  .ledger-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);}
-  .money-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;border:1px solid var(--line);}
-  table.money-grid{width:100%;border-collapse:collapse;table-layout:auto;min-width:736px;font-size:13px;}
-  table.money-grid th{background:var(--ink);color:#fff;padding:8px 6px;text-align:center;font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap;}
-  table.money-grid td{border-bottom:1px solid var(--line);padding:0;text-align:center;background:#fff;}
-  table.money-grid td input,table.money-grid td select{border:none;width:100%;padding:7px 6px;font-size:13px;background:transparent;color:var(--ink);font-family:inherit;}
+  .task-title{font-size:17px;font-weight:600;line-height:1.35;word-break:break-word;}
+  .task-title.done{text-decoration:line-through;color:var(--muted2);font-weight:400;}
+  .task-notes{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.5;word-break:break-word;}
+  .meta-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:9px;}
+  .bdg{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:6px;letter-spacing:.3px;white-space:nowrap;}
+  .bdg-red{background:#FBEAE6;color:#8E2F1B;} .bdg-amber{background:#FBF0D9;color:#7A5A17;}
+  .bdg-blue{background:#EAF0FA;color:#1C407A;} .bdg-green{background:#E8F1EC;color:#2C5A42;}
+  .bdg-gray{background:#F0EFEB;color:#5F5E5A;}
+  .task-acts{display:flex;gap:7px;margin-left:auto;align-items:center;flex-wrap:wrap;}
+  .btn-done{font-size:13.5px;font-weight:600;padding:7px 14px;border-radius:8px;border:none;background:var(--moss);color:#fff;cursor:pointer;}
+  .btn-ghost{font-size:13.5px;font-weight:600;padding:7px 13px;border-radius:8px;border:1px solid var(--line);background:#fff;color:#454545;cursor:pointer;}
+  .btn-x{border:none;background:none;color:#B3B1A9;cursor:pointer;font-size:16px;padding:5px 6px;}
+  .snooze-panel{margin-top:10px;padding:11px;background:var(--soft);border-radius:10px;display:flex;flex-direction:column;gap:8px;}
+  .snooze-quick{display:flex;gap:7px;flex-wrap:wrap;}
+  .snooze-quick button{font-size:13px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;}
+  .empty-state{text-align:center;padding:44px 20px;color:var(--muted);font-size:14.5px;}
+  .empty-state .t{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:5px;}
+
+  /* ===== Khung thêm việc ===== */
+  .main-input-row{display:flex;gap:9px;}
+  .title-input{flex:1;min-width:0;font-size:15.5px;padding:0 14px;height:44px;border-radius:10px;border:1px solid var(--line2);background:#fff;color:var(--ink);}
+  .icon-btn{flex-shrink:0;width:44px;height:44px;border-radius:10px;border:1px solid var(--line2);background:#fff;color:#6A6A6A;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:19px;}
+  .icon-btn.primary{background:var(--ink);color:#fff;border:none;font-weight:700;}
+  .icon-btn.on{background:var(--be);border-color:var(--be-line);color:var(--be-text);}
+  .sec-label{font-size:12px;font-weight:700;letter-spacing:1.1px;color:var(--muted2);margin:16px 0 8px;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip-btn{font-size:13.5px;padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:#fff;color:#454545;cursor:pointer;}
+  .chip-btn.on{background:var(--be);border-color:var(--be-line);color:var(--be-text);font-weight:600;}
+  .hint{font-size:12.5px;color:var(--muted2);margin-top:8px;line-height:1.55;}
+  select.f-sel,input.f-in,textarea.f-in{width:100%;font-size:14.5px;padding:10px 12px;border-radius:9px;border:1px solid var(--line2);background:#fff;color:var(--ink);font-family:inherit;}
+  input[type=text],input[type=datetime-local],input[type=date],textarea,select{font-size:14.5px;padding:10px 12px;border-radius:9px;border:1px solid var(--line2);background:#fff;color:var(--ink);width:100%;font-family:inherit;}
+  .row-flex{display:flex;gap:8px;}
+
+  /* ===== Sổ thu chi ===== */
+  .subtabs{display:flex;gap:5px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:5px;margin:18px 0;max-width:660px;}
+  .subtab{flex:1;text-align:center;padding:10px 6px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .subtab.active{background:var(--be);color:var(--be-text);border-color:var(--be-line);}
+  @media (max-width:820px){ .subtabs{flex-wrap:wrap;} .subtab{flex:1 1 46%;font-size:13px;padding:9px 4px;} }
+
+  .metrics{display:flex;gap:13px;margin-bottom:18px;}
+  .metric{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px;min-width:0;}
+  .metric .l{font-size:12px;color:var(--muted);letter-spacing:.3px;}
+  .metric .v{font-size:22px;font-weight:700;margin-top:4px;word-break:break-all;}
+  @media (max-width:820px){ .metrics{flex-wrap:wrap;gap:9px;} .metric{flex:1 1 46%;padding:10px 12px;} .metric .v{font-size:17px;} }
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;}
+  .card-head{padding:13px 17px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .card-title{font-size:16px;font-weight:700;}
+  .card-sub{font-size:12.5px;color:var(--muted2);margin-top:2px;}
+  .card-tools{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+  .card-pad{padding:15px 17px;}
+  .btn-sm{height:36px;border:1px solid var(--line2);border-radius:8px;background:#fff;font-size:13.5px;font-weight:600;color:#454545;padding:0 14px;cursor:pointer;}
+  .btn-sm.dark{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .section-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;}
+  .section-title{font-size:12px;font-weight:700;letter-spacing:1.1px;color:var(--muted2);margin-bottom:9px;text-transform:uppercase;}
+  .archive-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;font-size:14.5px;font-weight:600;padding:12px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;}
+  .history-item{background:#fff;border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-top:9px;}
+  .ledger-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .save-status{font-size:12px;margin-top:4px;color:var(--moss);}
+
+  /* Bảng chung */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table.grid{width:100%;border-collapse:collapse;font-size:15px;}
+  table.grid th{background:var(--soft);color:#6A6A6A;font-size:12px;font-weight:700;letter-spacing:.5px;padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;}
+  table.grid th.r{text-align:right;}
+  table.grid td{padding:11px 12px;border-bottom:1px solid #EFEFEE;vertical-align:middle;}
+  table.grid td.r{text-align:right;}
+  table.grid tbody tr:nth-child(even) td{background:#FAFAFA;}
+  .num{font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:15.5px;font-weight:700;letter-spacing:-.3px;}
+  .num-sm{font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:13.5px;}
+  .pos{color:#2C5A42;} .neg{color:#A3341C;} .zero{color:#AFAFAF;}
+  .sub-line{font-size:12.5px;color:var(--muted2);font-weight:400;margin-top:2px;}
+  table.grid tfoot td{background:var(--be);font-weight:700;font-size:16px;border-top:2px solid var(--be-line);border-bottom:none;padding:13px 12px;}
+  .total-row:empty{display:none;}
+  .total-row{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--be);border:1px solid var(--be-line);border-radius:10px;margin-top:12px;font-weight:700;font-size:16px;}
+  .remaining-box{margin-top:16px;background:var(--be);border:1px solid var(--be-line);border-radius:12px;padding:15px 17px;display:flex;justify-content:space-between;align-items:center;font-weight:700;}
+
+  /* Bảng nhập giao dịch (máy tính) */
+  .money-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:11px;border:1px solid var(--line);}
+  table.money-grid{width:100%;border-collapse:collapse;table-layout:auto;min-width:900px;font-size:15px;}
+  table.money-grid th{background:var(--soft);color:#6A6A6A;padding:10px 8px;text-align:center;font-size:12px;font-weight:700;letter-spacing:.4px;white-space:nowrap;border-bottom:1px solid var(--line);}
+  table.money-grid td{border-bottom:1px solid #EFEFEE;padding:0;text-align:center;background:#fff;}
+  table.money-grid tbody tr:nth-child(even) td{background:#FAFAFA;}
+  table.money-grid td input,table.money-grid td select{border:none;width:100%;padding:11px 9px;font-size:15px;background:transparent;color:var(--ink);font-family:inherit;}
   table.money-grid td input[type=text]{text-align:left;}
-  table.money-grid td input[type=date]{font-size:11px;padding:7px 3px;}
-  table.money-grid td input.amt-input{font-family:'IBM Plex Mono',monospace;font-weight:700;text-align:right;font-size:14px;}
-  table.money-grid td .del-btn{padding:6px;font-size:14px;}
-  .ledger-row .lbl{flex:1;font-size:14px;word-break:break-word;}
-  .ledger-row .amt{font-size:13.5px;font-weight:500;}
-  .total-row{display:flex;justify-content:space-between;align-items:center;padding:9px 8px;margin-top:4px;background:#FFF6C9;border-radius:8px;font-weight:700;}
-  .remaining-box{margin-top:16px;background:#FFF6C9;border:1px solid #E9D877;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:700;}
-  .archive-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;}
-  .history-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;}
-  .save-status{font-size:10.5px;margin-top:4px;color:var(--moss);}
+  table.money-grid td input[type=date]{font-size:14px;padding:11px 6px;}
+  table.money-grid td input.amt-input{font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-weight:700;text-align:right;font-size:17px;letter-spacing:-.3px;}
+  table.money-grid td .del-btn{padding:8px;font-size:15px;}
+  .amt-words{font-size:11.5px;color:var(--be-text);text-align:right;padding:0 9px 6px;min-height:14px;}
+
+  /* Thẻ nhập giao dịch (điện thoại) */
+  .mcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:11px;}
+  .mcard-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+  .mcard-no{font-size:12px;font-weight:700;color:var(--muted2);letter-spacing:.6px;}
+  .mlabel{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin:11px 0 5px;}
+  .mlabel:first-child{margin-top:0;}
+  .mamount{width:100%;height:58px;border:2px solid var(--ink);border-radius:11px;background:#fff;text-align:right;padding:0 14px;font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:24px;font-weight:700;letter-spacing:-.5px;color:var(--ink);}
+  .mamount::placeholder{color:#C2C2C2;}
+  .mwords{font-size:13px;color:var(--be-text);background:var(--be);border-radius:8px;padding:8px 11px;margin-top:7px;text-align:right;min-height:32px;}
+  .mquick{display:flex;gap:7px;margin-top:9px;}
+  .mquick button{flex:1;font-size:13px;font-weight:600;color:#454545;border:1px solid var(--line2);border-radius:9px;padding:10px 0;background:#fff;cursor:pointer;}
+  .del-btn{background:none;border:none;color:var(--muted2);cursor:pointer;padding:5px;flex-shrink:0;font-size:15px;}
+
+  .pill-btn{display:flex;align-items:center;gap:5px;font-size:13.5px;font-weight:600;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:#454545;cursor:pointer;white-space:nowrap;}
+
   @media print{
     body *{visibility:hidden;}
     #printArea, #printArea *{visibility:visible;}
     #printArea{display:block !important;position:absolute;top:0;left:0;width:100%;font-family:'Times New Roman', Times, serif !important;}
-    #printArea .money-table-wrap{overflow:visible !important;}
-    #printArea table.money-grid{
-      table-layout:auto !important;
-      width:100% !important;
-      min-width:0 !important;
-      font-family:'Times New Roman', Times, serif !important;
-      font-size:12pt !important;
-      border-collapse:collapse !important;
+    #printArea .money-table-wrap, #printArea .tbl-wrap{overflow:visible !important;}
+    #printArea table.money-grid, #printArea table.grid{
+      table-layout:auto !important; width:100% !important; min-width:0 !important;
+      font-family:'Times New Roman', Times, serif !important; font-size:12pt !important; border-collapse:collapse !important;
     }
-    #printArea table.money-grid th, #printArea table.money-grid td{
-      font-family:'Times New Roman', Times, serif !important;
-      padding:5pt 7pt !important;
-      border:0.7pt solid #444 !important;
+    #printArea table.money-grid th, #printArea table.money-grid td,
+    #printArea table.grid th, #printArea table.grid td{
+      font-family:'Times New Roman', Times, serif !important; padding:5pt 7pt !important; border:0.7pt solid #444 !important;
     }
     #printArea table.money-grid th{ font-size:11pt !important; }
-    #printArea table.money-grid td.right{
-      font-family:'Times New Roman', Times, serif !important;
-      white-space:nowrap !important;
-    }
-    #printArea table.money-grid tr{ break-inside: avoid; }
+    #printArea table.money-grid td.right{ font-family:'Times New Roman', Times, serif !important; white-space:nowrap !important; }
+    #printArea table.money-grid tr, #printArea table.grid tr{ break-inside: avoid; }
     #printArea .font-display{ font-family:'Times New Roman', Times, serif !important; }
     @page{ size: A4; margin: 14mm; }
   }
@@ -139,186 +253,301 @@
 </head>
 <body>
 
-<div id="loadingOverlay" style="position:fixed;inset:0;background:var(--paper,#faf8f4);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
-  <div style="width:38px;height:38px;border:4px solid #DCE3ED;border-top-color:#1B2430;border-radius:50%;animation:spinVCL .8s linear infinite;"></div>
-  <div style="font-weight:700;font-size:14px;color:#8A93A3;">Đang tải dữ liệu…</div>
+<div id="loadingOverlay" style="position:fixed;inset:0;background:#FAFAFA;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
+  <div style="width:38px;height:38px;border:4px solid #E7E7E5;border-top-color:#1F1F1F;border-radius:50%;animation:spinVCL .8s linear infinite;"></div>
+  <div style="font-weight:600;font-size:14px;color:#969696;">Đang tải dữ liệu…</div>
 </div>
 <style>@keyframes spinVCL{to{transform:rotate(360deg);}}</style>
 
-<div class="tabs">
-  <div class="wrap tabs-row">
-    <button class="tab-btn active" id="tabBtnTasks" onclick="switchTab('tasks')">✓ Việc cần làm</button>
-    <button class="tab-btn" id="tabBtnLedger" onclick="switchTab('ledger')">💳 Sổ thu chi</button>
+<!-- ===== THANH TRÊN CÙNG ===== -->
+<div class="topbar">
+  <div class="wrap topbar-row">
+    <div class="brand">Việc cần làm &amp; Sổ thu chi</div>
+    <div class="tabs-row">
+      <button class="tab-btn active" id="tabBtnTasks" onclick="switchTab('tasks')">Việc cần làm</button>
+      <button class="tab-btn" id="tabBtnLedger" onclick="switchTab('ledger')">Sổ thu chi</button>
+    </div>
+    <div class="top-spacer"></div>
+    <div class="font-mono" id="todayLabel" style="font-size:12px;color:#969696;letter-spacing:.4px;"></div>
+    <div class="top-btns">
+      <input type="file" id="backupFileInput" accept="application/json" class="hidden" onchange="importBackup(event)">
+      <button class="icon-sm-btn tap" id="notifBtn" onclick="requestNotificationPermission()" title="Bật thông báo nhắc việc">🔕</button>
+      <button class="icon-sm-btn tap" onclick="exportBackup()" title="Xuất dữ liệu ra file sao lưu">⬇</button>
+      <button class="icon-sm-btn tap" onclick="document.getElementById('backupFileInput').click()" title="Nhập dữ liệu từ file sao lưu">⬆</button>
+      <button class="icon-sm-btn tap" onclick="toggleSearch()" title="Tìm việc">🔍</button>
+    </div>
+    <div class="ver-label">V1.5.1</div>
   </div>
 </div>
-<div style="text-align:center;font-size:10px;color:var(--muted);opacity:.75;padding:3px 0;">Phiên bản: V1.4.0</div>
+<div class="wrap"><div class="save-status" id="cloudStatus" style="margin-top:6px;"></div></div>
 
-<!-- TASKS TAB -->
+<!-- ===== TAB VIỆC CẦN LÀM ===== -->
 <div id="tasksTab">
-  <div id="taskStickyHeader">
-  <div class="wrap" style="padding-top:28px;padding-bottom:12px;">
-    <div class="header-top">
-      <div class="font-display" style="font-size:26px;font-weight:600;">Việc cần làm</div>
-      <div class="top-btns">
-        <input type="file" id="backupFileInput" accept="application/json" class="hidden" onchange="importBackup(event)">
-        <button class="icon-sm-btn" onclick="document.getElementById('backupFileInput').click()" title="Nhập dữ liệu từ file sao lưu">⬆️</button>
-        <button class="icon-sm-btn" onclick="exportBackup()" title="Xuất dữ liệu ra file sao lưu">⬇️</button>
-        <button class="icon-sm-btn" id="notifBtn" onclick="requestNotificationPermission()" title="Bật thông báo: quá hạn & sau 4 giờ chưa xong">🔕</button>
-        <button class="icon-sm-btn" onclick="toggleSearch()">🔍</button>
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><div class="v"><span class="dot" style="background:#C0492E;"></span><span id="statOverdue">0</span></div><div class="l">QUÁ HẠN</div></div>
+      <div class="stat"><div class="v"><span class="dot" style="background:#B07C1E;"></span><span id="statToday">0</span></div><div class="l">ĐẾN HẠN HÔM NAY</div></div>
+      <div class="stat"><div class="v"><span class="dot" style="background:#2857A6;"></span><span id="statPending">0</span></div><div class="l">ĐANG MỞ</div></div>
+      <div class="stat"><div class="v"><span class="dot" style="background:#3F7A5C;"></span><span id="statWeekDone">0</span></div><div class="l">XONG TRONG TUẦN</div></div>
+    </div>
+
+    <div class="task-main">
+      <div class="filters">
+        <button class="filter-btn active" data-filter="pending" onclick="setFilter('pending')">Chưa hoàn thành</button>
+        <button class="filter-btn" data-filter="all" onclick="setFilter('all')">Tất cả</button>
+        <button class="filter-btn" data-filter="today" onclick="setFilter('today')">Hôm nay</button>
+        <button class="filter-btn" data-filter="overdue" onclick="setFilter('overdue')">Quá hạn</button>
+        <button class="filter-btn" data-filter="upcoming" onclick="setFilter('upcoming')">Sắp tới</button>
+        <button class="filter-btn" data-filter="done" onclick="setFilter('done')">Hoàn thành</button>
+        <input type="text" id="searchInput" class="search-box hidden" placeholder="Tìm việc theo tên hoặc ghi chú…" oninput="renderTasks()">
+      </div>
+      <div id="taskListWrap"></div>
+      <div class="save-status" style="padding:14px 4px 0;">✓ Lưu ngay trên máy (không cần mạng) · bấm ⬇ để sao lưu định kỳ</div>
+    </div>
+  </div>
+
+<!-- ===== THANH NHẬP CỐ ĐỊNH DƯỚI ĐÁY ===== -->
+<div class="dock" id="taskDock">
+  <div class="wrap">
+    <div id="composerOptions" class="hidden">
+      <div class="opt-panel">
+        <div class="opt-cols">
+          <div class="opt-col">
+      <div class="sec-label">HẠN CHÓT NHANH</div>
+      <div class="chips" id="dueChips">
+        <button class="chip-btn tap" data-due="1h" onclick="setQuickDue('1h')">Trong 1 giờ</button>
+        <button class="chip-btn tap" data-due="4h" onclick="setQuickDue('4h')">Sau 4 giờ</button>
+        <button class="chip-btn tap" data-due="eod" onclick="setQuickDue('eod')">Cuối ngày · 17:00</button>
+        <button class="chip-btn tap" data-due="tomorrow" onclick="setQuickDue('tomorrow')">Sáng mai · 08:00</button>
+        <button class="chip-btn tap" data-due="nextweek" onclick="setQuickDue('nextweek')">Đầu tuần sau · T2 08:00</button>
+        <button class="chip-btn tap" data-due="eom" onclick="setQuickDue('eom')">Cuối tháng</button>
+      </div>
+      <input type="datetime-local" id="draftDue" style="margin-top:8px;" onchange="syncDueChips()">
+      <div class="hint" id="dueHint">Chưa đặt hạn — việc sẽ nằm ở nhóm "Chưa có thời gian".</div>
+
+      <div class="sec-label">NHẮC TRƯỚC HẠN</div>
+      <div class="chips" id="remindBeforeChips">
+        <button class="chip-btn tap on" data-rb="0" onclick="setRemindBefore(0)">Không nhắc</button>
+        <button class="chip-btn tap" data-rb="15" onclick="setRemindBefore(15)">15 phút</button>
+        <button class="chip-btn tap" data-rb="60" onclick="setRemindBefore(60)">1 giờ</button>
+        <button class="chip-btn tap" data-rb="1440" onclick="setRemindBefore(1440)">1 ngày</button>
+        <button class="chip-btn tap" data-rb="4320" onclick="setRemindBefore(4320)">3 ngày</button>
+      </div>
+
+      <div class="sec-label">NHẮC LẠI KHI CHƯA XONG</div>
+      <div class="chips" id="repeatRemindChips">
+        <button class="chip-btn tap on" data-rr="0" onclick="setRepeatRemind(0)">Không</button>
+        <button class="chip-btn tap" data-rr="120" onclick="setRepeatRemind(120)">Mỗi 2 giờ</button>
+        <button class="chip-btn tap" data-rr="240" onclick="setRepeatRemind(240)">Mỗi 4 giờ</button>
+        <button class="chip-btn tap" data-rr="1440" onclick="setRepeatRemind(1440)">Mỗi ngày</button>
+      </div>
+
+      <div class="sec-label">LẶP LẠI</div>
+      <select id="repeatSelect" onchange="draft.repeat=this.value;">
+        <option value="none">Không lặp</option>
+        <option value="daily">Hằng ngày</option>
+        <option value="workdays">Ngày làm việc (T2–T7)</option>
+        <option value="weekly">Hằng tuần</option>
+        <option value="biweekly">2 tuần một lần</option>
+        <option value="monthly">Hằng tháng</option>
+        <option value="quarterly">Hằng quý</option>
+      </select>
+          </div>
+          <div class="opt-col">
+      <div class="sec-label">MỨC ƯU TIÊN</div>
+      <div class="chips" id="priorityChips">
+        <button class="chip-btn tap" data-pr="urgent" onclick="setPriority('urgent')">🔴 Gấp</button>
+        <button class="chip-btn tap" data-pr="high" onclick="setPriority('high')">🟠 Cao</button>
+        <button class="chip-btn tap on" data-pr="normal" onclick="setPriority('normal')">🔵 Thường</button>
+        <button class="chip-btn tap" data-pr="low" onclick="setPriority('low')">⚪ Thấp</button>
+      </div>
+
+      <div class="sec-label">NHÃN</div>
+      <div class="chips" id="tagChips"></div>
+
+      <div class="sec-label">GHI CHÚ</div>
+      <textarea id="draftNotes" placeholder="Ghi chú thêm (không bắt buộc)…" rows="2"></textarea>
+      <div class="hint">💡 Nhấn Enter ở ô tên việc để lưu nhanh. Các lựa chọn nhắc việc sẽ gửi qua thông báo đẩy tới điện thoại.</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="font-mono" id="todayLabel" style="font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:.5px;"></div>
-    <div class="save-status">✓ Lưu ngay trên máy (không cần mạng) · bấm ⬇️ để sao lưu định kỳ</div>
-    <div class="save-status" id="cloudStatus"></div>
-    <input type="text" id="searchInput" placeholder="Tìm việc theo tên hoặc ghi chú…" class="hidden" style="margin-top:12px;" oninput="renderTasks()">
-    <div class="chip-row">
-      <div class="chip"><div class="chip-top"><span class="dot" style="background:var(--rust);"></span><span class="chip-val" id="statOverdue">0</span></div><div class="chip-label">quá hạn</div></div>
-      <div class="chip"><div class="chip-top"><span class="dot" style="background:var(--amber);"></span><span class="chip-val" id="statToday">0</span></div><div class="chip-label">hôm nay</div></div>
-      <div class="chip"><div class="chip-top"><span class="dot" style="background:var(--blue);"></span><span class="chip-val" id="statPending">0</span></div><div class="chip-label">đang mở</div></div>
-    </div>
-  </div>
-
-  <div class="wrap filters" style="padding-bottom:10px;">
-    <button class="filter-btn" data-filter="all" onclick="setFilter('all')">Tất cả</button>
-    <button class="filter-btn active" data-filter="pending" onclick="setFilter('pending')">Chưa hoàn thành</button>
-    <button class="filter-btn" data-filter="today" onclick="setFilter('today')">Hôm nay</button>
-    <button class="filter-btn" data-filter="overdue" onclick="setFilter('overdue')">Quá hạn</button>
-    <button class="filter-btn" data-filter="done" onclick="setFilter('done')">Hoàn thành</button>
-  </div>
-  </div>
-
-  <div class="wrap" id="taskListWrap" style="padding-top:16px;padding-bottom:180px;"></div>
-
-  <div class="composer">
-    <div class="composer-inner">
-      <div class="composer-expand hidden" id="composerExpand">
-        <div class="row-flex">
-          <input type="datetime-local" id="draftDue">
-          <button class="pill-btn" onclick="setDraftDueIn(4)">⏱ Sau 4 giờ</button>
-          <button class="pill-btn" onclick="setDraftDueTomorrow()">📅 Ngày mai 8h</button>
-        </div>
-        <div class="row-flex">
-          <button class="pill-btn" id="priorityBtn" onclick="cyclePriority()">🚩 Thường</button>
-          <button class="pill-btn" id="repeatBtn" onclick="cycleRepeat()">🔁 Không lặp</button>
-        </div>
-        <textarea id="draftNotes" placeholder="Ghi chú thêm (không bắt buộc)…" rows="2"></textarea>
-      </div>
-      <div class="main-input-row">
-        <button class="icon-btn" onclick="toggleExpand()">⚙️</button>
-        <input type="text" class="title-input" id="draftTitle" placeholder="Nhập việc cần làm…" onkeydown="if(event.key==='Enter')addTask()">
-        <button class="icon-btn primary" onclick="addTask()">＋</button>
-      </div>
+    <div class="main-input-row">
+      <button class="icon-btn tap" id="optToggleBtn" onclick="toggleExpand()" title="Tuỳ chọn nhắc việc">⚙</button>
+      <input type="text" class="title-input" id="draftTitle" placeholder="Nhập việc cần làm…" onkeydown="if(event.key==='Enter')addTask()">
+      <button class="icon-btn primary tap" onclick="addTask()" title="Thêm việc">＋</button>
     </div>
   </div>
 </div>
+</div>
 
-<!-- LEDGER TAB (Sổ thu chi) -->
+<!-- ===== TAB SỔ THU CHI ===== -->
 <div id="ledgerTab" class="hidden">
-  <div class="wrap" style="padding:24px 20px 90px;">
-    <div class="font-display" style="font-size:24px;font-weight:600;">Sổ thu chi</div>
-
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin:14px 0;border:1px solid var(--line);border-radius:12px;padding:4px;background:#fff;">
-      <button class="tap money-sub-btn" id="moneySubBtnNames" onclick="setMoneySection('names')" style="flex:1 1 45%;padding:9px 4px;border:none;border-radius:9px;background:transparent;color:var(--muted);font-size:12.5px;font-weight:600;cursor:pointer;">📇 Danh sách tên</button>
-      <button class="tap money-sub-btn active" id="moneySubBtnEntries" onclick="setMoneySection('entries')" style="flex:1 1 45%;padding:9px 4px;border:none;border-radius:9px;background:var(--ink);color:#fff;font-size:12.5px;font-weight:600;cursor:pointer;">💸 Chi tiền</button>
-      <button class="tap money-sub-btn" id="moneySubBtnSummary" onclick="setMoneySection('summary')" style="flex:1 1 45%;padding:9px 4px;border:none;border-radius:9px;background:transparent;color:var(--muted);font-size:12.5px;font-weight:600;cursor:pointer;">📊 Tổng hợp</button>
-      <button class="tap money-sub-btn" id="moneySubBtnDetail" onclick="setMoneySection('detail')" style="flex:1 1 45%;padding:9px 4px;border:none;border-radius:9px;background:transparent;color:var(--muted);font-size:12.5px;font-weight:600;cursor:pointer;">📒 Sổ chi tiền</button>
+  <div class="wrap" style="padding-bottom:50px;">
+    <div class="subtabs">
+      <button class="subtab tap" id="moneySubBtnSummary" onclick="setMoneySection('summary')">📊 Tổng hợp</button>
+      <button class="subtab tap active" id="moneySubBtnEntries" onclick="setMoneySection('entries')">💸 Chi tiền</button>
+      <button class="subtab tap" id="moneySubBtnDetail" onclick="setMoneySection('detail')">📒 Sổ chi tiền</button>
+      <button class="subtab tap" id="moneySubBtnNames" onclick="setMoneySection('names')">📇 Danh sách tên</button>
     </div>
 
-    <!-- DANH MỤC -->
+    <!-- ---- DANH SÁCH TÊN ---- -->
     <div id="moneyNamesSection" class="hidden">
-      <div class="section-card">
+      <div class="section-card" style="max-width:660px;">
         <div class="section-title">Thêm tên</div>
         <div class="row-flex">
           <input type="text" id="newMoneyName" placeholder="Tên người…" onkeydown="if(event.key==='Enter'){event.preventDefault();addMoneyName();}">
-          <button class="icon-btn primary" style="width:42px;height:42px;flex-shrink:0;" onclick="addMoneyName()">＋</button>
+          <button class="icon-btn primary tap" style="flex-shrink:0;" onclick="addMoneyName()">＋</button>
         </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:8px;cursor:pointer;">
-          <input type="checkbox" id="newMoneyTrack" style="width:16px;height:16px;"> 📒 Theo dõi Sổ chi tiền (Nợ/Có/Luỹ kế)
+        <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--muted);margin-top:10px;cursor:pointer;">
+          <input type="checkbox" id="newMoneyTrack" style="width:17px;height:17px;"> 📒 Theo dõi Sổ chi tiền (Nợ/Có/Luỹ kế)
         </label>
       </div>
-      <div id="moneyNamesList" style="margin-top:12px;"></div>
+      <div id="moneyNamesList" style="margin-top:12px;max-width:660px;"></div>
     </div>
 
-    <!-- CHI TIỀN -->
+    <!-- ---- CHI TIỀN ---- -->
     <div id="moneyEntriesSection">
-      <div class="section-card">
-        <div class="section-title">Nhập giao dịch — Ngày / Người đưa / Người nhận / Số tiền</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📋 Có thể dán trực tiếp từ Excel — bấm vào ô đầu tiên muốn dán rồi Ctrl+V (Người đưa/nhận phải đúng tên đã có trong Danh sách tên).</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">💡 Mẹo: Ai ở "Người ĐƯA tiền" → cộng vào <b>Nợ</b> của người đó (họ cho ứng ra, bên kia đang nợ lại). Ai ở "Người NHẬN tiền" → cộng vào <b>Có</b> của người đó (họ được trả lại) — xem ở tab "Sổ chi tiền".</div>
-        <div class="money-table-wrap">
-          <table class="money-grid">
-            <thead><tr><th style="width:96px;">Ngày</th><th style="width:130px;">Người đưa tiền</th><th style="width:130px;">Người nhận tiền</th><th style="width:120px;">Số tiền</th><th style="width:140px;">Diễn Giải (tự để trống nếu muốn tự động)</th><th style="width:90px;">Ghi chú</th><th style="width:30px;"></th></tr></thead>
-            <tbody id="moneyEntryTbody"></tbody>
-          </table>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Nhập giao dịch</div>
+            <div class="card-sub">Ngày · Người đưa · Người nhận · Số tiền · Diễn giải · Ghi chú</div>
+          </div>
+          <div class="card-tools">
+            <button class="btn-sm tap" onclick="addMoneyEntryRow()">＋ Thêm dòng</button>
+            <button class="btn-sm dark tap" onclick="saveMoneyEntries()">💾 Lưu tất cả</button>
+          </div>
         </div>
-        <button class="tap" style="margin-top:10px;font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;width:100%;" onclick="addMoneyEntryRow()">＋ Thêm dòng</button>
+        <div class="card-pad">
+          <div class="hint desk-only" style="margin:0 0 12px;">📋 Bấm vào ô đầu tiên muốn dán rồi Ctrl+V để dán trực tiếp từ Excel · 💡 Người <b>ĐƯA</b> tiền cộng vào <b>Nợ</b>, người <b>NHẬN</b> tiền cộng vào <b>Có</b> (xem ở tab Sổ chi tiền).</div>
+          <div class="money-table-wrap desk-only" id="moneyEntryTableWrap">
+            <table class="money-grid">
+              <thead><tr>
+                <th style="width:130px;">NGÀY</th><th style="width:200px;">NGƯỜI ĐƯA TIỀN</th><th style="width:200px;">NGƯỜI NHẬN TIỀN</th>
+                <th style="width:190px;">SỐ TIỀN</th><th>DIỄN GIẢI (để trống = tự động)</th><th style="width:170px;">GHI CHÚ</th><th style="width:52px;"></th>
+              </tr></thead>
+              <tbody id="moneyEntryTbody"></tbody>
+            </table>
+          </div>
+          <div class="mob-only" id="moneyEntryCards"></div>
+          <div class="total-row" id="entryDraftTotal"></div>
+        </div>
       </div>
-      <button class="archive-btn tap" style="margin-top:10px;background:var(--ink);color:#fff;border:none;" onclick="saveMoneyEntries()">💾 Lưu tất cả</button>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Giao dịch đã lưu</div>
+            <div class="card-sub">Bấm ✏️ để sửa, 🗑 để xoá</div>
+          </div>
+          <div class="card-tools">
+            <input type="date" id="moneyListFrom" style="width:150px;" onchange="renderMoneyEntriesList()">
+            <input type="date" id="moneyListTo" style="width:150px;" onchange="renderMoneyEntriesList()">
+            <button class="btn-sm tap" onclick="clearMoneyListDateFilter()">Xem tất cả</button>
+            <button class="btn-sm tap" onclick="exportMoneyEntriesExcel()">⬇ Excel</button>
+          </div>
+        </div>
+        <div class="card-pad">
+          <div id="moneyEntriesList"></div>
+          <div class="total-row" id="moneyEntriesTotalLine"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- DANH MỤC TỔNG -->
+    <!-- ---- TỔNG HỢP ---- -->
     <div id="moneySummarySection" class="hidden">
-      <div class="section-card">
-        <div class="section-title">Chọn người nhận</div>
-        <select id="summaryReceiverSelect" onchange="renderMoneySimpleSummary()" style="width:100%;padding:10px 10px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:14px;"></select>
-        <div class="row-flex" style="margin-top:10px;">
-          <input type="date" id="summaryListFrom" onchange="renderMoneySimpleSummary()" style="flex:1;padding:9px 10px;border-radius:9px;border:1px solid var(--line);">
-          <input type="date" id="summaryListTo" onchange="renderMoneySimpleSummary()" style="flex:1;padding:9px 10px;border-radius:9px;border:1px solid var(--line);">
+      <div class="metrics" id="grandMetrics"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Danh sách tổng — tất cả mọi người</div>
+            <div class="card-sub" id="grandPeriodLabel">Toàn bộ thời gian</div>
+          </div>
+          <div class="card-tools">
+            <input type="date" id="grandFrom" style="width:150px;" onchange="renderGrandSummary()">
+            <input type="date" id="grandTo" style="width:150px;" onchange="renderGrandSummary()">
+            <button class="btn-sm tap" onclick="document.getElementById('grandFrom').value='';document.getElementById('grandTo').value='';renderGrandSummary();">Xem tất cả</button>
+            <button class="btn-sm tap" onclick="exportGrandSummaryExcel()">⬇ Excel</button>
+            <button class="btn-sm tap" onclick="viewGrandSummaryImage()">👁 Xem ảnh</button>
+            <button class="btn-sm dark tap" onclick="printGrandSummary()">🖨 In A4</button>
+          </div>
         </div>
-        <button class="tap" style="margin-top:6px;font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;" onclick="document.getElementById('summaryListFrom').value='';document.getElementById('summaryListTo').value='';renderMoneySimpleSummary();">Xem tất cả</button>
+        <div class="card-pad" style="padding:0;">
+          <div id="grandSummaryCapture" style="background:#fff;">
+            <div class="tbl-wrap" id="grandSummaryWrap"></div>
+          </div>
+        </div>
       </div>
-      <div class="section-card" style="margin-top:16px;">
-        <div class="section-title">Chi tiết</div>
-        <div id="moneySummaryCapture" style="background:#fff;">
-          <div id="moneySummaryList"></div>
-          <div class="total-row" id="moneySummaryTotalLine" style="margin-top:8px;"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Chi tiết theo người nhận</div>
+            <div class="card-sub">Các khoản một người đã nhận trong kỳ</div>
+          </div>
+          <div class="card-tools">
+            <select id="summaryReceiverSelect" onchange="renderMoneySimpleSummary()" style="width:220px;"></select>
+            <input type="date" id="summaryListFrom" style="width:150px;" onchange="renderMoneySimpleSummary()">
+            <input type="date" id="summaryListTo" style="width:150px;" onchange="renderMoneySimpleSummary()">
+            <button class="btn-sm tap" onclick="document.getElementById('summaryListFrom').value='';document.getElementById('summaryListTo').value='';renderMoneySimpleSummary();">Xem tất cả</button>
+            <button class="btn-sm tap" onclick="exportMoneySummaryExcel()">⬇ Excel</button>
+            <button class="btn-sm tap" onclick="viewMoneySummaryImage()">👁 Xem ảnh</button>
+            <button class="btn-sm dark tap" onclick="printMoneySummary()">🖨 In A4</button>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;margin-top:14px;">
-          <button class="tap" style="flex:1;font-size:11.5px;font-weight:600;padding:8px 4px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;" onclick="exportMoneySummaryExcel()">⬇ Excel</button>
-          <button class="tap" style="flex:1;font-size:11.5px;font-weight:600;padding:8px 4px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;" onclick="viewMoneySummaryImage()">👁 Xem</button>
-          <button class="tap" style="flex:1;font-size:11.5px;font-weight:600;padding:8px 4px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;" onclick="printMoneySummary()">🖨 In A4</button>
+        <div class="card-pad">
+          <div id="moneySummaryCapture" style="background:#fff;">
+            <div id="moneySummaryList"></div>
+            <div class="total-row" id="moneySummaryTotalLine" style="margin-top:10px;"></div>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- ---- SỔ CHI TIỀN ---- -->
     <div id="moneyDetailSection" class="hidden">
-      <div class="section-card">
-        <div class="section-title">Chọn người</div>
-        <select id="detailReceiverSelect" onchange="onDetailReceiverChange()" style="width:100%;padding:10px 10px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:14px;"></select>
-        <div class="row-flex" style="margin-top:10px;">
-          <input type="text" id="detailOpeningBalance" placeholder="Số dư đầu kỳ (nếu có, chuyển từ sổ cũ)" inputmode="decimal" oninput="handleOpeningBalanceInput(event)" onblur="forceReformatAmount(event)" style="flex:1;padding:9px 10px;border-radius:9px;border:1px solid var(--line);">
-          <button class="tap" style="font-size:12px;font-weight:600;padding:9px 12px;border-radius:9px;border:none;background:var(--ink);color:#fff;cursor:pointer;" onclick="saveOpeningBalance()">Lưu</button>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Sổ chi tiền theo người</div>
+            <div class="card-sub">Nợ / Có / Luỹ kế — chỉ hiện những tên đã đánh dấu theo dõi</div>
+          </div>
+          <div class="card-tools">
+            <select id="detailReceiverSelect" onchange="onDetailReceiverChange()" style="width:220px;"></select>
+            <input type="date" id="detailListFrom" style="width:150px;" onchange="renderMoneyDetail()">
+            <input type="date" id="detailListTo" style="width:150px;" onchange="renderMoneyDetail()">
+            <button class="btn-sm tap" onclick="document.getElementById('detailListFrom').value='';document.getElementById('detailListTo').value='';renderMoneyDetail();">Xem tất cả</button>
+          </div>
         </div>
-        <div class="row-flex" style="margin-top:10px;">
-          <input type="date" id="detailListFrom" onchange="renderMoneyDetail()" style="flex:1;padding:9px 10px;border-radius:9px;border:1px solid var(--line);">
-          <input type="date" id="detailListTo" onchange="renderMoneyDetail()" style="flex:1;padding:9px 10px;border-radius:9px;border:1px solid var(--line);">
-        </div>
-        <button class="tap" style="margin-top:6px;font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;" onclick="document.getElementById('detailListFrom').value='';document.getElementById('detailListTo').value='';renderMoneyDetail();">Xem tất cả</button>
-      </div>
-      <div class="section-card" style="margin-top:16px;">
-        <div class="section-title">Chi tiết</div>
-        <div id="moneyDetailCapture" style="background:#fff;">
-          <div id="moneyDetailList"></div>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:14px;">
-          <button class="tap" style="flex:1;font-size:11.5px;font-weight:600;padding:8px 4px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;" onclick="exportMoneyDetailExcel()">⬇ Excel</button>
-          <button class="tap" style="flex:1;font-size:11.5px;font-weight:600;padding:8px 4px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;" onclick="viewMoneyDetailImage()">👁 Xem</button>
-          <button class="tap" style="flex:1;font-size:11.5px;font-weight:600;padding:8px 4px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;" onclick="printMoneyDetail()">🖨 In A4</button>
+        <div class="card-pad">
+          <div class="row-flex" style="max-width:520px;margin-bottom:14px;">
+            <input type="text" id="detailOpeningBalance" placeholder="Số dư đầu kỳ (nếu có, chuyển từ sổ cũ)" inputmode="decimal" oninput="handleOpeningBalanceInput(event)" onblur="forceReformatAmount(event)">
+            <button class="btn-sm dark tap" style="flex-shrink:0;" onclick="saveOpeningBalance()">Lưu</button>
+          </div>
+          <div id="moneyDetailCapture" style="background:#fff;">
+            <div id="moneyDetailList"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;max-width:520px;">
+            <button class="btn-sm tap" style="flex:1;" onclick="exportMoneyDetailExcel()">⬇ Excel</button>
+            <button class="btn-sm tap" style="flex:1;" onclick="viewMoneyDetailImage()">👁 Xem ảnh</button>
+            <button class="btn-sm dark tap" style="flex:1;" onclick="printMoneyDetail()">🖨 In A4</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-<div id="printArea" style="display:none;"></div>
-<div id="imgPreviewOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(21,34,56,.9);z-index:997;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;overflow:auto;">
-  <img id="imgPreviewTag" style="max-width:94%;max-height:75vh;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.4);">
-  <div class="row-flex" style="width:280px;">
-    <button class="tap" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:600;cursor:pointer;" onclick="closeImgPreview()">✕ Đóng</button>
-    <button class="tap" style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--ink);color:#fff;font-weight:600;cursor:pointer;" onclick="shareImgPreview()">📤 Chia sẻ</button>
+  <div id="printArea" style="display:none;"></div>
+  <div id="imgPreviewOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(20,20,20,.9);z-index:997;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;overflow:auto;">
+    <img id="imgPreviewTag" style="max-width:94%;max-height:75vh;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.4);">
+    <div class="row-flex" style="width:300px;">
+      <button class="tap" style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:600;cursor:pointer;" onclick="closeImgPreview()">✕ Đóng</button>
+      <button class="tap" style="flex:1;padding:12px;border-radius:10px;border:none;background:var(--ink);color:#fff;font-weight:600;cursor:pointer;" onclick="shareImgPreview()">📤 Chia sẻ</button>
+    </div>
   </div>
 </div>
-</div>
-
 <script>
 const TASK_KEY = "viec-can-lam-tasks-v2";
 const LEDGER_KEY = "viec-can-lam-ledger-v1";
@@ -336,7 +565,7 @@ let fsDb = null;
 let fsReady = false;
 let vcMessaging = null;
 // ⚠️ Dán VAPID key lấy trong Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
-const VC_VAPID_KEY = "DÁN_VAPID_KEY_TẠI_ĐÂY";
+const VC_VAPID_KEY = "BOZk5fPcJ0V9uJl14EGIeTg8GGf2JIJpHlXDhfIYknhl0Je2I7wgoVjvDqFbsDwdwzkcoHQRgr8ibfN7cTXOze0";
 let firestoreListeners = [];
 let cloudSyncTimer = null;
 let lastSyncedCloud = { tasks: [], ledger: null };
@@ -477,18 +706,31 @@ const SEED_TASKS = [
 ];
 let tasks = loadJSON(TASK_KEY, SEED_TASKS);
 let ledger = loadJSON(LEDGER_KEY, { names: [], entries: [], openingBalances: {} });
+const TAG_KEY = "viec-can-lam-tags-v1";
+let tagList = loadJSON(TAG_KEY, ["Pháp lý","Tài chính","Cơ điện","Sản xuất","Đối tác"]);
 let filter = "pending";
 let expCategory = "thuong";
-let draft = { priority: "normal", repeat: "none" };
+let draft = { priority:"normal", repeat:"none", remindBefore:0, repeatRemind:0, tags:[], duePreset:null };
 let snoozeOpenId = null;
 
 const PRIORITY = {
-  high: { label: "GẤP", color: "#C9472E", bg: "#FBEAE6" },
-  normal: { label: "Thường", color: "#2857A6", bg: "#EAF0FA" },
-  low: { label: "THẤP", color: "#6B7280", bg: "#EEF0F2" },
+  urgent: { label: "GẤP",     color: "#8E2F1B", bg: "#FBEAE6" },
+  high:   { label: "CAO",     color: "#7A5A17", bg: "#FBF0D9" },
+  normal: { label: "THƯỜNG",  color: "#1C407A", bg: "#EAF0FA" },
+  low:    { label: "THẤP",    color: "#5F5E5A", bg: "#F0EFEB" },
 };
-const REPEAT_LABEL = { none: "Không lặp", daily: "mỗi ngày", weekly: "mỗi tuần" };
-
+const REPEAT_LABEL = {
+  none:"Không lặp", daily:"mỗi ngày", workdays:"ngày làm việc (T2–T7)", weekly:"mỗi tuần",
+  biweekly:"2 tuần/lần", monthly:"mỗi tháng", quarterly:"mỗi quý"
+};
+const REMIND_BEFORE_LABEL = { 0:"", 15:"nhắc trước 15 phút", 60:"nhắc trước 1 giờ", 1440:"nhắc trước 1 ngày", 4320:"nhắc trước 3 ngày" };
+const REPEAT_REMIND_LABEL = { 0:"", 120:"nhắc lại mỗi 2 giờ", 240:"nhắc lại mỗi 4 giờ", 1440:"nhắc lại mỗi ngày" };
+function fmtMinutes(m){
+  m = Number(m)||0;
+  if(m>=1440) return (m/1440)+" ngày";
+  if(m>=60) return (m/60)+" giờ";
+  return m+" phút";
+}
 function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
 function fmtTime(iso){ if(!iso) return null; return new Date(iso).toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"}); }
 function fmtCreatedAt(ts){
@@ -532,8 +774,19 @@ function setFilter(f){
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active', b.dataset.filter===f));
   renderTasks();
 }
-function toggleExpand(){ document.getElementById('composerExpand').classList.toggle('hidden'); }
-
+function toggleExpand(){
+  const el = document.getElementById('composerOptions');
+  const btn = document.getElementById('optToggleBtn');
+  if(!el) return;
+  const hidden = el.classList.toggle('hidden');
+  if(btn) btn.classList.toggle('on', !hidden);
+}
+function collapseComposer(){
+  const el = document.getElementById('composerOptions');
+  const btn = document.getElementById('optToggleBtn');
+  if(el) el.classList.add('hidden');
+  if(btn) btn.classList.remove('on');
+}
 function exportBackup(){
   const now = new Date();
   const payload = { tasks, ledger, exportedAt: now.toISOString() };
@@ -577,29 +830,73 @@ function toLocalInputValue(d){
   const pad = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-function setDraftDueIn(hours){
+function setQuickDue(kind){
   const d = new Date();
-  d.setHours(d.getHours()+hours, d.getMinutes(), 0, 0);
+  if(kind==='1h'){ d.setHours(d.getHours()+1, d.getMinutes(), 0, 0); }
+  else if(kind==='4h'){ d.setHours(d.getHours()+4, d.getMinutes(), 0, 0); }
+  else if(kind==='eod'){ d.setHours(17,0,0,0); }
+  else if(kind==='tomorrow'){ d.setDate(d.getDate()+1); d.setHours(8,0,0,0); }
+  else if(kind==='nextweek'){ const add = (8 - d.getDay()) % 7 || 7; d.setDate(d.getDate()+add); d.setHours(8,0,0,0); }
+  else if(kind==='eom'){ d.setMonth(d.getMonth()+1, 0); d.setHours(17,0,0,0); }
   document.getElementById('draftDue').value = toLocalInputValue(d);
+  draft.duePreset = kind;
+  markChips('dueChips','due',kind);
+  updateDueHint();
 }
-function setDraftDueTomorrow(){
-  const d = new Date();
-  d.setDate(d.getDate()+1);
-  d.setHours(8,0,0,0);
-  document.getElementById('draftDue').value = toLocalInputValue(d);
+function syncDueChips(){
+  draft.duePreset = null;
+  markChips('dueChips','due',null);
+  updateDueHint();
 }
-function cyclePriority(){
-  const order=["normal","high","low"];
-  draft.priority = order[(order.indexOf(draft.priority)+1)%order.length];
-  const btn = document.getElementById('priorityBtn');
-  btn.textContent = "🚩 " + PRIORITY[draft.priority].label;
+function updateDueHint(){
+  const el = document.getElementById('dueHint');
+  if(!el) return;
+  const v = document.getElementById('draftDue').value;
+  if(!v){ el.textContent = 'Chưa đặt hạn — việc sẽ nằm ở nhóm "Chưa có thời gian" và được nhắc sau 4 giờ nếu chưa xong.'; return; }
+  const d = new Date(v);
+  el.textContent = 'Hạn: ' + d.toLocaleString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
-function cycleRepeat(){
-  const order=["none","daily","weekly"];
-  draft.repeat = order[(order.indexOf(draft.repeat)+1)%order.length];
-  document.getElementById('repeatBtn').textContent = "🔁 " + REPEAT_LABEL[draft.repeat];
+function markChips(wrapId, dataName, value){
+  const wrap = document.getElementById(wrapId);
+  if(!wrap) return;
+  wrap.querySelectorAll('.chip-btn').forEach(b=>{
+    b.classList.toggle('on', value!==null && String(b.dataset[dataName])===String(value));
+  });
 }
-
+function setRemindBefore(m){ draft.remindBefore = Number(m)||0; markChips('remindBeforeChips','rb',draft.remindBefore); }
+function setRepeatRemind(m){ draft.repeatRemind = Number(m)||0; markChips('repeatRemindChips','rr',draft.repeatRemind); }
+function setPriority(p){ draft.priority = p; markChips('priorityChips','pr',p); }
+function renderTagChips(){
+  const wrap = document.getElementById('tagChips');
+  if(!wrap) return;
+  wrap.innerHTML = tagList.map(t=>
+    `<button class="chip-btn tap ${draft.tags.includes(t)?'on':''}" onclick="toggleDraftTag('${escapeHtml(t).replace(/'/g,"\\'")}')">${escapeHtml(t)}</button>`
+  ).join('') + `<button class="chip-btn tap" onclick="addNewTag()">＋ Nhãn mới</button>`;
+}
+function toggleDraftTag(t){
+  draft.tags = draft.tags.includes(t) ? draft.tags.filter(x=>x!==t) : draft.tags.concat([t]);
+  renderTagChips();
+}
+function addNewTag(){
+  const v = prompt("Tên nhãn mới:");
+  if(!v) return;
+  const name = v.trim();
+  if(!name || tagList.includes(name)) return;
+  tagList.push(name);
+  saveJSON(TAG_KEY, tagList);
+  renderTagChips();
+}
+function resetDraftUI(){
+  draft = { priority:"normal", repeat:"none", remindBefore:0, repeatRemind:0, tags:[], duePreset:null };
+  markChips('dueChips','due',null);
+  markChips('remindBeforeChips','rb',0);
+  markChips('repeatRemindChips','rr',0);
+  markChips('priorityChips','pr','normal');
+  const rs = document.getElementById('repeatSelect'); if(rs) rs.value = 'none';
+  renderTagChips();
+  updateDueHint();
+  collapseComposer();
+}
 function addTask(){
   const title = document.getElementById('draftTitle').value.trim();
   if(!title) return;
@@ -609,29 +906,35 @@ function addTask(){
     id: uid(), title, notes,
     dueAt: dueVal ? new Date(dueVal).toISOString() : null,
     priority: draft.priority, repeat: draft.repeat,
+    remindBefore: draft.remindBefore, repeatRemind: draft.repeatRemind,
+    tags: draft.tags.slice(),
     status: "pending", createdAt: Date.now(), completedAt: null,
+    notified:false, notifiedBefore:false, notified4h:false, lastRemindAt:null,
   });
   saveJSON(TASK_KEY, tasks);
   document.getElementById('draftTitle').value='';
   document.getElementById('draftDue').value='';
   document.getElementById('draftNotes').value='';
-  draft = { priority:"normal", repeat:"none" };
-  document.getElementById('priorityBtn').textContent = "🚩 Thường";
-  document.getElementById('repeatBtn').textContent = "🔁 Không lặp";
-  document.getElementById('composerExpand').classList.add('hidden');
+  resetDraftUI();
   renderTasks();
 }
 function nextOccurrence(dueAt, repeat){
   const base = dueAt ? new Date(dueAt) : new Date();
   if(repeat==="daily") base.setDate(base.getDate()+1);
+  else if(repeat==="workdays"){ do{ base.setDate(base.getDate()+1); } while(base.getDay()===0); }
   else if(repeat==="weekly") base.setDate(base.getDate()+7);
+  else if(repeat==="biweekly") base.setDate(base.getDate()+14);
+  else if(repeat==="monthly") base.setMonth(base.getMonth()+1);
+  else if(repeat==="quarterly") base.setMonth(base.getMonth()+3);
   return base;
 }
 function completeTask(id){
   const t = tasks.find(x=>x.id===id);
   tasks = tasks.map(x=> x.id===id ? {...x, status:"done", completedAt:Date.now()} : x);
   if(t && t.repeat && t.repeat!=="none"){
-    tasks.unshift({...t, id:uid(), status:"pending", completedAt:null, createdAt:Date.now(), dueAt: nextOccurrence(t.dueAt, t.repeat).toISOString()});
+    tasks.unshift({...t, id:uid(), status:"pending", completedAt:null, createdAt:Date.now(),
+      notified:false, notifiedBefore:false, notified4h:false, lastRemindAt:null, reminderBaseAt:Date.now(),
+      dueAt: t.dueAt ? nextOccurrence(t.dueAt, t.repeat).toISOString() : null});
   }
   snoozeOpenId=null;
   saveJSON(TASK_KEY, tasks); renderTasks();
@@ -657,7 +960,7 @@ function deleteTask(id, title){
   saveJSON(TASK_KEY, tasks); renderTasks();
 }
 function snoozeTask(id, date){
-  tasks = tasks.map(x=> x.id===id ? {...x, dueAt: date.toISOString(), notified:false} : x);
+  tasks = tasks.map(x=> x.id===id ? {...x, dueAt: date.toISOString(), notified:false, notifiedBefore:false, notified4h:false, lastRemindAt:null} : x);
   snoozeOpenId=null;
   saveJSON(TASK_KEY, tasks); renderTasks();
 }
@@ -666,19 +969,27 @@ function quickSnooze(id, kind){
   if(kind==="1h") d.setHours(d.getHours()+1);
   else if(kind==="3h") d.setHours(d.getHours()+3);
   else if(kind==="tomorrow"){ d.setDate(d.getDate()+1); d.setHours(8,0,0,0); }
+  else if(kind==="nextweek"){ const add = (8 - d.getDay()) % 7 || 7; d.setDate(d.getDate()+add); d.setHours(8,0,0,0); }
   snoozeTask(id, d);
 }
 function toggleSnooze(id){ snoozeOpenId = snoozeOpenId===id ? null : id; renderTasks(); }
 
 function renderTasks(){
   const now = new Date();
-  document.getElementById('todayLabel').textContent = now.toLocaleDateString("vi-VN",{weekday:"long",day:"2-digit",month:"long"}).toUpperCase();
+  const lbl = document.getElementById('todayLabel');
+  if(lbl) lbl.textContent = now.toLocaleDateString("vi-VN",{weekday:"long",day:"2-digit",month:"long"}).toUpperCase();
 
-  let overdue=0, today=0, done=0;
-  tasks.forEach(t=>{ const s=statusOf(t,now); if(s==="overdue") overdue++; else if(s==="today") today++; if(t.status==="done") done++; });
+  let overdue=0, today=0, done=0, weekDone=0;
+  const weekAgo = Date.now() - 7*24*60*60*1000;
+  tasks.forEach(t=>{
+    const s=statusOf(t,now);
+    if(s==="overdue") overdue++; else if(s==="today") today++;
+    if(t.status==="done"){ done++; if((t.completedAt||0) >= weekAgo) weekDone++; }
+  });
   document.getElementById('statOverdue').textContent = overdue;
   document.getElementById('statToday').textContent = today;
   document.getElementById('statPending').textContent = tasks.length - done;
+  const wd = document.getElementById('statWeekDone'); if(wd) wd.textContent = weekDone;
 
   const q = (document.getElementById('searchInput').value||'').trim().toLowerCase();
   let visible = tasks.filter(t=>{
@@ -688,6 +999,7 @@ function renderTasks(){
     if(filter==="pending") return t.status!=="done";
     if(filter==="today") return s==="today" || s==="overdue" || (!t.dueAt && t.status!=="done" && createdToday);
     if(filter==="overdue") return s==="overdue";
+    if(filter==="upcoming") return t.status!=="done" && s==="upcoming" && !!t.dueAt;
     if(filter==="done") return t.status==="done";
     return true;
   });
@@ -704,63 +1016,93 @@ function renderTasks(){
 
   const wrap = document.getElementById('taskListWrap');
   if(groups.length===0){
-    wrap.innerHTML = `<div class="empty-state"><div class="t">${q?"Không tìm thấy việc phù hợp":(filter==="done"?"Chưa có việc nào hoàn thành":"Chưa có việc nào ở đây")}</div><div>${q?"Thử từ khoá khác.":"Nhập việc cần làm ở ô bên dưới để bắt đầu."}</div></div>`;
+    wrap.innerHTML = `<div class="empty-state"><div class="t">${q?"Không tìm thấy việc phù hợp":(filter==="done"?"Chưa có việc nào hoàn thành":"Chưa có việc nào ở đây")}</div><div>${q?"Thử từ khoá khác.":"Nhập việc cần làm ở khung Thêm việc mới."}</div></div>`;
     return;
   }
   wrap.innerHTML = groups.map(g => `
     <div style="margin-bottom:22px;">
-      <div class="group-label font-mono">${g.label}</div>
+      <div class="group-label">${g.label}<span class="group-line"></span></div>
       <div>${g.items.map(t=>renderTaskCard(t, now)).join('')}</div>
     </div>
   `).join('');
 }
-
 function renderTaskCard(task, now){
   const s = statusOf(task, now);
-  const pr = PRIORITY[task.priority||"normal"];
-  const repeatLabel = task.repeat && task.repeat!=="none" ? REPEAT_LABEL[task.repeat] : null;
+  const pr = PRIORITY[task.priority||"normal"] || PRIORITY.normal;
   const isDone = task.status==="done";
   const isSnoozeOpen = snoozeOpenId===task.id;
+  const safeTitle = escapeHtml(task.title).replace(/'/g,"\\'");
+  const badges = [];
+
+  if(!isDone && task.priority && task.priority!=="normal"){
+    badges.push(`<span class="bdg" style="color:${pr.color};background:${pr.bg};">${pr.label}</span>`);
+  }
+  if(task.dueAt && !isDone){
+    const due = new Date(task.dueAt);
+    const diff = due - now;
+    let cls = 'bdg-blue', txt = fmtTime(task.dueAt);
+    if(s==='overdue'){ cls='bdg-red'; txt = 'Trễ ' + fmtGap(-diff) + ' · ' + fmtShortDateTime(task.dueAt); }
+    else if(s==='today'){ cls='bdg-amber'; txt = fmtTime(task.dueAt) + ' · còn ' + fmtGap(diff); }
+    badges.push(`<span class="bdg ${cls}">${txt}</span>`);
+  }
+  if(isDone && task.completedAt){
+    badges.push(`<span class="bdg bdg-green">Hoàn thành ${fmtCreatedAt(task.completedAt)}</span>`);
+  }
+  if(!isDone && task.repeat && task.repeat!=="none"){
+    badges.push(`<span class="bdg bdg-green">🔁 ${REPEAT_LABEL[task.repeat]||''}</span>`);
+  }
+  if(!isDone && Number(task.remindBefore||0)>0){
+    badges.push(`<span class="bdg bdg-gray">🔔 ${REMIND_BEFORE_LABEL[task.remindBefore]||('nhắc trước '+fmtMinutes(task.remindBefore))}</span>`);
+  }
+  if(!isDone && Number(task.repeatRemind||0)>0){
+    badges.push(`<span class="bdg bdg-gray">🔁 ${REPEAT_REMIND_LABEL[task.repeatRemind]||('nhắc lại mỗi '+fmtMinutes(task.repeatRemind))}</span>`);
+  }
+  (task.tags||[]).forEach(tg=>{ badges.push(`<span class="bdg bdg-gray">${escapeHtml(tg)}</span>`); });
+
   return `
-    <div class="task-card ${isDone?'done':''}">
-      <div class="task-row">
-        <button class="check-btn ${isDone?'done':''}" style="border-color:${isDone?'#3F7A5C':DOT_COLOR[s]}" onclick="${isDone?`reopenTask('${task.id}')`:`completeTask('${task.id}')`}">${isDone?'✓':''}</button>
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;flex-wrap:wrap;">
-            ${task.priority && task.priority!=="normal" ? `<span class="pr-badge font-mono" style="color:${pr.color};background:${pr.bg};">${pr.label}</span>`:''}
-            <div class="task-title ${isDone?'done':''}">${escapeHtml(task.title)}</div>
-          </div>
-          ${task.notes?`<div class="task-notes">${escapeHtml(task.notes)}</div>`:''}
-          ${(task.dueAt||repeatLabel)?`<div class="task-meta font-mono" style="color:${s==='overdue'?'#C9472E':'#6B7280'}">
-            ${task.dueAt?`<span>🕐 ${fmtTime(task.dueAt)}${s==='overdue'?' · trễ hạn':''}</span>`:''}
-            ${repeatLabel?`<span>🔁 ${repeatLabel}</span>`:''}
-          </div>`:''}
-          <div class="task-meta font-mono" style="color:#9CA3AF;">
-            <span>🕘 Tạo lúc ${fmtCreatedAt(task.createdAt)}</span>
+    <div class="task-card ${isDone?'done':''} ${(!isDone&&s==='overdue')?'overdue':''}">
+      <button class="check-btn ${isDone?'done':''}" onclick="${isDone?`reopenTask('${task.id}')`:`completeTask('${task.id}')`}">${isDone?'✓':''}</button>
+      <div style="flex:1;min-width:0;">
+        <div class="task-title ${isDone?'done':''}">${escapeHtml(task.title)}</div>
+        ${task.notes?`<div class="task-notes">${escapeHtml(task.notes)}</div>`:''}
+        <div class="meta-row">
+          ${badges.join('')}
+          <div class="task-acts">
+            ${!isDone?`<button class="btn-done tap" onclick="completeTask('${task.id}')">✓ Xong</button>
+            <button class="btn-ghost tap" onclick="toggleSnooze('${task.id}')">↻ Hẹn lại</button>`
+            :`<button class="btn-ghost tap" onclick="reopenTask('${task.id}')">↺ Mở lại</button>`}
+            <button class="btn-x tap" onclick="editTask('${task.id}')" title="Sửa việc">✏️</button>
+            <button class="btn-x tap" onclick="deleteTask('${task.id}','${safeTitle}')" title="Xoá việc">🗑</button>
           </div>
         </div>
-        <button class="del-btn" onclick="editTask('${task.id}')" title="Sửa việc">✏️</button>
-        <button class="del-btn" onclick="deleteTask('${task.id}','${escapeHtml(task.title).replace(/'/g,"\\'")}')">🗑</button>
+        <div style="font-size:12px;color:#AFAFAF;margin-top:7px;">Tạo lúc ${fmtCreatedAt(task.createdAt)}</div>
+        ${isSnoozeOpen?`
+        <div class="snooze-panel">
+          <div class="snooze-quick">
+            <button onclick="quickSnooze('${task.id}','1h')">+1 giờ</button>
+            <button onclick="quickSnooze('${task.id}','3h')">+3 giờ</button>
+            <button onclick="quickSnooze('${task.id}','tomorrow')">Sáng mai 8h</button>
+            <button onclick="quickSnooze('${task.id}','nextweek')">Đầu tuần sau</button>
+          </div>
+          <div class="row-flex">
+            <input type="datetime-local" id="customSnooze-${task.id}">
+            <button class="icon-btn primary tap" style="width:auto;padding:0 14px;font-size:14px;" onclick="const v=document.getElementById('customSnooze-${task.id}').value; if(v) snoozeTask('${task.id}', new Date(v));">Đặt</button>
+          </div>
+        </div>`:''}
       </div>
-      ${!isDone?`
-      <div class="task-actions">
-        <button class="btn-done" onclick="completeTask('${task.id}')">✓ Xong</button>
-        <button class="btn-snooze" onclick="toggleSnooze('${task.id}')">↻ Hẹn lại</button>
-      </div>`:''}
-      ${isSnoozeOpen?`
-      <div class="snooze-panel">
-        <div class="snooze-quick">
-          <button onclick="quickSnooze('${task.id}','1h')">+1 giờ</button>
-          <button onclick="quickSnooze('${task.id}','3h')">+3 giờ</button>
-          <button onclick="quickSnooze('${task.id}','tomorrow')">Sáng mai 8h</button>
-        </div>
-        <div class="row-flex">
-          <input type="datetime-local" id="customSnooze-${task.id}">
-          <button class="icon-btn primary" style="width:auto;padding:0 12px;font-size:12.5px;" onclick="const v=document.getElementById('customSnooze-${task.id}').value; if(v) snoozeTask('${task.id}', new Date(v));">Đặt</button>
-        </div>
-      </div>`:''}
     </div>
   `;
+}
+function fmtGap(ms){
+  const m = Math.max(0, Math.round(ms/60000));
+  if(m < 60) return m + " phút";
+  const h = Math.floor(m/60);
+  if(h < 24) return h + " giờ";
+  return Math.floor(h/24) + " ngày";
+}
+function fmtShortDateTime(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString("vi-VN",{day:"2-digit",month:"2-digit"}) + " " + d.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});
 }
 function escapeHtml(str){
   const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
@@ -772,8 +1114,8 @@ function formatNumber(n){ return (Number(n)||0).toLocaleString("en-US"); }
 let moneySection = 'entries';
 function refreshMoneyUI(){
   if(moneySection==='names') renderMoneyNames();
-  else if(moneySection==='entries'){ renderMoneyEntryRows(); }
-  else if(moneySection==='summary'){ populateSimpleSummarySelect(); renderMoneySimpleSummary(); }
+  else if(moneySection==='entries'){ renderMoneyEntryRows(); renderMoneyEntriesList(); }
+  else if(moneySection==='summary'){ populateSimpleSummarySelect(); renderMoneySimpleSummary(); renderGrandSummary(); }
   else if(moneySection==='detail'){ populateDetailReceiverSelect(); renderMoneyDetail(); }
 }
 function setMoneySection(s){
@@ -782,21 +1124,53 @@ function setMoneySection(s){
   document.getElementById('moneyEntriesSection').classList.toggle('hidden', s!=='entries');
   document.getElementById('moneySummarySection').classList.toggle('hidden', s!=='summary');
   document.getElementById('moneyDetailSection').classList.toggle('hidden', s!=='detail');
-  ['Names','Entries','Summary','Detail'].forEach(k=>{
+  const map = { Names:'names', Entries:'entries', Summary:'summary', Detail:'detail' };
+  Object.keys(map).forEach(k=>{
     const btn = document.getElementById('moneySubBtn'+k);
-    const active = (k==='Names' && s==='names') || (k==='Entries' && s==='entries') || (k==='Summary' && s==='summary') || (k==='Detail' && s==='detail');
-    btn.style.background = active ? 'var(--ink)' : 'transparent';
-    btn.style.color = active ? '#fff' : 'var(--muted)';
+    if(btn) btn.classList.toggle('active', map[k]===s);
   });
   if(s==='names') renderMoneyNames();
   if(s==='entries'){
     if(moneyEntryRows.length===0) initMoneyEntryRows();
     renderMoneyEntryRows();
+    renderMoneyEntriesList();
   }
-  if(s==='summary'){ populateSimpleSummarySelect(); renderMoneySimpleSummary(); }
+  if(s==='summary'){ populateSimpleSummarySelect(); renderMoneySimpleSummary(); renderGrandSummary(); }
   if(s==='detail'){ populateDetailReceiverSelect(); renderMoneyDetail(); }
 }
-
+/* ---- Đọc số tiền bằng chữ (chống nhầm số 0 khi nhập trên điện thoại) ---- */
+const DOC_SO_CHU = ['không','một','hai','ba','bốn','năm','sáu','bảy','tám','chín'];
+function docBaChuSo(n, full){
+  const tram = Math.floor(n/100), chuc = Math.floor((n%100)/10), donvi = n%10;
+  let s = '';
+  if(full || tram>0){
+    s += DOC_SO_CHU[tram] + ' trăm';
+    if(chuc===0 && donvi>0) s += ' linh';
+  }
+  if(chuc>1) s += ' ' + DOC_SO_CHU[chuc] + ' mươi';
+  else if(chuc===1) s += ' mười';
+  if(donvi>0){
+    if(chuc>1 && donvi===1) s += ' mốt';
+    else if(chuc>0 && donvi===5) s += ' lăm';
+    else s += ' ' + DOC_SO_CHU[donvi];
+  }
+  return s.replace(/\s+/g,' ').trim();
+}
+function docSoTien(num){
+  num = Math.floor(Number(num)||0);
+  if(num<=0) return '';
+  const groups = [];
+  let n = num;
+  while(n>0){ groups.push(n%1000); n = Math.floor(n/1000); }
+  const UNITS = ['',' nghìn',' triệu',' tỷ',' nghìn tỷ',' triệu tỷ'];
+  const parts = [];
+  for(let i=groups.length-1; i>=0; i--){
+    if(groups[i]===0) continue;
+    parts.push(docBaChuSo(groups[i], i < groups.length-1) + (UNITS[i]||''));
+  }
+  const s = parts.join(' ').replace(/\s+/g,' ').trim();
+  return s.charAt(0).toUpperCase() + s.slice(1) + ' đồng';
+}
 /* ---- Danh sách tên (tên người) ---- */
 function addMoneyName(){
   const input = document.getElementById('newMoneyName');
@@ -936,7 +1310,7 @@ function renderMoneySimpleSummary(){
       <table class="money-grid" style="table-layout:auto;width:100%;min-width:520px;">
         <thead><tr><th style="width:7%;">STT</th><th style="width:14%;">Ngày tháng</th><th style="width:27%;">Diễn Giải</th><th style="width:26%;">Số tiền</th><th style="width:18%;">Ghi Chú</th><th class="no-export" style="width:8%;"></th></tr></thead>
         <tbody>${bodyRows}
-          <tr style="background:#FFEB3B;"><td colspan="3" style="text-align:center;font-weight:800;font-size:16px;">Tổng Tiền</td><td colspan="2" style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:19px;color:#C9472E;">${formatNumber(total)}</td><td class="no-export"></td></tr>
+          <tr style="background:#F2E9D8;"><td colspan="3" style="text-align:center;font-weight:800;font-size:16px;">Tổng Tiền</td><td colspan="2" style="text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:19px;color:#A3341C;">${formatNumber(total)}</td><td class="no-export"></td></tr>
         </tbody>
       </table>
     </div>
@@ -973,9 +1347,10 @@ function printViaNewWindow(el, title){
     <style>
       body{margin:0;padding:0;font-family:'Times New Roman', Times, serif;color:#1B2430;}
       .print-content{width:190mm;max-width:190mm;margin:0 auto;padding:0;box-sizing:border-box;}
-      table.money-grid{table-layout:auto;width:auto;border-collapse:collapse;font-size:12pt;}
-      table.money-grid th, table.money-grid td{font-family:'Times New Roman', Times, serif;padding:5pt 9pt;border:0.7pt solid #444;white-space:nowrap;}
-      table.money-grid th{background:#1B2430;color:#fff;font-size:11pt;}
+      table.money-grid, table.grid{table-layout:auto;width:auto;border-collapse:collapse;font-size:12pt;}
+      table.money-grid th, table.money-grid td, table.grid th, table.grid td{font-family:'Times New Roman', Times, serif;padding:5pt 9pt;border:0.7pt solid #444;white-space:nowrap;}
+      table.money-grid th, table.grid th{background:#1F1F1F;color:#fff;font-size:11pt;text-align:center;}
+      table.grid td.r{text-align:right;}
       table.money-grid td.right{text-align:right;}
       table.money-grid td.left{text-align:left;}
       .font-display{font-family:'Times New Roman', Times, serif;font-size:19px;font-weight:700;text-align:center;}
@@ -989,7 +1364,7 @@ function printViaNewWindow(el, title){
     <script>
       window.addEventListener('load', function(){
         var wrap = document.getElementById('printContentWrap');
-        var table = wrap.querySelector('table.money-grid');
+        var table = wrap.querySelector('table.money-grid, table.grid');
         if(table){
           table.style.transform = 'none';
           var available = wrap.clientWidth;
@@ -1032,7 +1407,12 @@ function updateMoneyEntryField(id, field, value){
   const row = moneyEntryRows.find(r=>r.id===id);
   if(row) row[field] = value;
 }
+function isMobileLayout(){ return window.matchMedia('(max-width: 820px)').matches; }
 function renderMoneyEntryRows(){
+  if(isMobileLayout()) renderMoneyEntryCards(); else renderMoneyEntryTable();
+  updateEntryDraftTotal();
+}
+function renderMoneyEntryTable(){
   const wrap = document.getElementById('moneyEntryTbody');
   if(!wrap) return;
   wrap.innerHTML = moneyEntryRows.map(r=>`
@@ -1040,14 +1420,72 @@ function renderMoneyEntryRows(){
       <td><input type="date" data-field="date" value="${r.date}" onchange="updateMoneyEntryField('${r.id}','date',this.value)"></td>
       <td><select data-field="giver" onchange="updateMoneyEntryField('${r.id}','giver',this.value)">${nameOptionsHtml(r.giver)}</select></td>
       <td><select data-field="receiver" onchange="updateMoneyEntryField('${r.id}','receiver',this.value)">${nameOptionsHtml(r.receiver)}</select></td>
-      <td><input type="text" class="amt-input" data-field="amount" id="moneyAmt-${r.id}" value="${r.amount?formatNumber(r.amount):''}" placeholder="0" inputmode="decimal" oninput="handleMoneyAmountInput(event,'${r.id}')" onblur="forceReformatAmount(event)"></td>
+      <td>
+        <input type="text" class="amt-input" data-field="amount" id="moneyAmt-${r.id}" value="${r.amount?formatNumber(r.amount):''}" placeholder="0" inputmode="numeric" oninput="handleMoneyAmountInput(event,'${r.id}')" onblur="forceReformatAmount(event)">
+        <div class="amt-words" id="amtWords-${r.id}">${docSoTien(r.amount)}</div>
+      </td>
       <td><input type="text" data-field="desc" value="${escapeHtml(r.desc||'')}" placeholder="Để trống = tự động" oninput="updateMoneyEntryField('${r.id}','desc',this.value)"></td>
       <td><input type="text" data-field="note" value="${escapeHtml(r.note||'')}" placeholder="Ghi chú" oninput="updateMoneyEntryField('${r.id}','note',this.value)"></td>
-      <td><button class="del-btn" onclick="removeMoneyEntryRow('${r.id}')">🗑</button></td>
+      <td><button class="del-btn tap" onclick="removeMoneyEntryRow('${r.id}')">🗑</button></td>
     </tr>
   `).join('');
   attachMoneyEntryEnterNav();
   attachMoneyEntryPasteHandlers();
+}
+function renderMoneyEntryCards(){
+  const wrap = document.getElementById('moneyEntryCards');
+  if(!wrap) return;
+  wrap.innerHTML = moneyEntryRows.map((r,i)=>`
+    <div class="mcard">
+      <div class="mcard-head">
+        <div class="mcard-no">GIAO DỊCH ${i+1}</div>
+        <button class="del-btn tap" onclick="removeMoneyEntryRow('${r.id}')">✕</button>
+      </div>
+      <div class="mlabel">NGÀY</div>
+      <input type="date" value="${r.date}" onchange="updateMoneyEntryField('${r.id}','date',this.value)">
+      <div class="mlabel">NGƯỜI ĐƯA TIỀN</div>
+      <select onchange="updateMoneyEntryField('${r.id}','giver',this.value)">${nameOptionsHtml(r.giver)}</select>
+      <div class="mlabel">NGƯỜI NHẬN TIỀN</div>
+      <select onchange="updateMoneyEntryField('${r.id}','receiver',this.value)">${nameOptionsHtml(r.receiver)}</select>
+      <div class="mlabel">SỐ TIỀN</div>
+      <input type="text" class="mamount" id="moneyAmt-${r.id}" value="${r.amount?formatNumber(r.amount):''}" placeholder="0" inputmode="numeric" oninput="handleMoneyAmountInput(event,'${r.id}')" onblur="forceReformatAmount(event)">
+      <div class="mwords" id="amtWords-${r.id}">${docSoTien(r.amount) || 'chưa nhập'}</div>
+      <div class="mquick">
+        <button onclick="bumpAmount('${r.id}',1000000)">+ 1 triệu</button>
+        <button onclick="bumpAmount('${r.id}',10000000)">+ 10 triệu</button>
+        <button onclick="bumpAmount('${r.id}',100000000)">+ 100 triệu</button>
+        <button onclick="bumpAmount('${r.id}',0)">Xoá</button>
+      </div>
+      <div class="mlabel">DIỄN GIẢI</div>
+      <input type="text" value="${escapeHtml(r.desc||'')}" placeholder="Để trống = tự động" oninput="updateMoneyEntryField('${r.id}','desc',this.value)">
+      <div class="mlabel">GHI CHÚ</div>
+      <input type="text" value="${escapeHtml(r.note||'')}" placeholder="Không bắt buộc" oninput="updateMoneyEntryField('${r.id}','note',this.value)">
+    </div>
+  `).join('') + `<button class="archive-btn tap" style="width:100%;border-style:dashed;" onclick="addMoneyEntryRow()">＋ Thêm giao dịch</button>`;
+}
+function bumpAmount(rowId, delta){
+  const row = moneyEntryRows.find(r=>r.id===rowId);
+  if(!row) return;
+  const cur = Number(row.amount)||0;
+  row.amount = delta===0 ? '' : cur + delta;
+  const el = document.getElementById('moneyAmt-'+rowId);
+  if(el) el.value = row.amount ? formatNumber(row.amount) : '';
+  updateAmountWords(rowId);
+  updateEntryDraftTotal();
+}
+function updateAmountWords(rowId){
+  const row = moneyEntryRows.find(r=>r.id===rowId);
+  const el = document.getElementById('amtWords-'+rowId);
+  if(!el) return;
+  const words = docSoTien(row ? row.amount : 0);
+  el.textContent = words || (isMobileLayout() ? 'chưa nhập' : '');
+}
+function updateEntryDraftTotal(){
+  const el = document.getElementById('entryDraftTotal');
+  if(!el) return;
+  const valid = moneyEntryRows.filter(r=> r.giver && r.receiver && Number(r.amount)>0);
+  const total = valid.reduce((s,r)=> s + Number(r.amount), 0);
+  el.innerHTML = `<span>ĐANG NHẬP · ${valid.length} dòng hợp lệ</span><span class="num">${formatNumber(total)}</span>`;
 }
 function saveMoneyEntries(){
   const valid = moneyEntryRows.filter(r=> r.giver && r.receiver && Number(r.amount)>0);
@@ -1254,7 +1692,7 @@ function renderMoneyDetail(){
   `).join('');
 
   const openingRow = `
-    <tr style="background:#F2F3F6;font-weight:700;">
+    <tr style="background:#F5F5F4;font-weight:700;">
       <td></td><td style="text-align:center;font-family:'IBM Plex Mono',monospace;">—</td>
       <td style="text-align:left;">Số dư đầu kỳ</td>
       <td></td><td></td>
@@ -1283,7 +1721,7 @@ function renderMoneyDetail(){
       <table class="money-grid" style="table-layout:auto;width:100%;min-width:620px;">
         <thead><tr><th style="width:6%;">STT</th><th style="width:13%;">Ngày tháng</th><th style="width:29%;">Diễn Giải</th><th style="width:15%;">Nợ</th><th style="width:15%;">Có</th><th style="width:16%;">Luỹ kế</th><th class="no-export" style="width:6%;"></th></tr></thead>
         <tbody>${openingRow}${bodyRows}
-          <tr style="background:#FFEB3B;">
+          <tr style="background:#F2E9D8;">
             <td colspan="3" style="text-align:center;font-weight:800;font-size:15px;">Tổng</td>
             <td style="text-align:right;font-weight:800;font-family:'IBM Plex Mono',monospace;color:#C9472E;">${formatNumber(totalNo)}</td>
             <td style="text-align:right;font-weight:800;font-family:'IBM Plex Mono',monospace;color:#3F7A5C;">${formatNumber(totalCo)}</td>
@@ -1295,6 +1733,131 @@ function renderMoneyDetail(){
     </div>
     ${editRows}
   `;
+}
+
+/* ---- Danh sách tổng: tất cả mọi người ---- */
+function buildGrandSummary(from, to){
+  const stats = {};
+  function ensure(nm){
+    if(!stats[nm]) stats[nm] = {
+      name: nm,
+      tracked: !!(ledger.names.find(x=>x.name===nm)||{}).trackLedger,
+      opening: (ledger.openingBalances && ledger.openingBalances[nm]) || 0,
+      dua: 0, nhan: 0, count: 0, last: null
+    };
+    return stats[nm];
+  }
+  ledger.names.forEach(n=> ensure(n.name));
+  let totalAmount = 0, totalCount = 0;
+  ledger.entries.forEach(e=>{
+    const inRange = (!from || e.date >= from) && (!to || e.date <= to);
+    const beforeRange = from && e.date < from;
+    if(inRange){ totalAmount += Number(e.amount)||0; totalCount++; }
+    [['giver','dua'],['receiver','nhan']].forEach(pair=>{
+      const nm = e[pair[0]];
+      if(!nm) return;
+      const st = ensure(nm);
+      if(beforeRange){ st.opening += (pair[0]==='giver' ? Number(e.amount) : -Number(e.amount)); return; }
+      if(!inRange) return;
+      st[pair[1]] += Number(e.amount)||0;
+      st.count++;
+      if(!st.last || e.date > st.last.date) st.last = e;
+    });
+  });
+  const rows = Object.keys(stats).map(k=>{
+    const st = stats[k];
+    st.phatSinh = st.dua - st.nhan;
+    st.luyKe = st.opening + st.phatSinh;
+    return st;
+  }).sort((a,b)=> b.luyKe - a.luyKe);
+  return { rows, totalAmount, totalCount };
+}
+function renderGrandSummary(){
+  const wrap = document.getElementById('grandSummaryWrap');
+  if(!wrap) return;
+  const from = document.getElementById('grandFrom')?.value;
+  const to = document.getElementById('grandTo')?.value;
+  const { rows, totalAmount, totalCount } = buildGrandSummary(from, to);
+
+  const lbl = document.getElementById('grandPeriodLabel');
+  if(lbl) lbl.textContent = (from||to)
+    ? `Kỳ: ${from?formatDateVN(from):'đầu sổ'} – ${to?formatDateVN(to):'nay'} · sắp xếp theo Luỹ kế giảm dần`
+    : 'Toàn bộ thời gian · sắp xếp theo Luỹ kế giảm dần';
+
+  const active = rows.filter(r=> r.count>0 || r.opening!==0);
+  const phaiThu = rows.filter(r=>r.luyKe>0).reduce((s,r)=>s+r.luyKe,0);
+  const phaiTra = rows.filter(r=>r.luyKe<0).reduce((s,r)=>s-r.luyKe,0);
+  const met = document.getElementById('grandMetrics');
+  if(met) met.innerHTML = `
+    <div class="metric"><div class="l">TỔNG PHÁT SINH TRONG KỲ</div><div class="v num">${formatNumber(totalAmount)}</div></div>
+    <div class="metric"><div class="l">SỐ GIAO DỊCH</div><div class="v num">${formatNumber(totalCount)}</div></div>
+    <div class="metric"><div class="l">SỐ NGƯỜI CÓ PHÁT SINH</div><div class="v num">${rows.filter(r=>r.count>0).length}</div></div>
+    <div class="metric"><div class="l">CÒN PHẢI THU (DƯƠNG)</div><div class="v num pos">${formatNumber(phaiThu)}</div></div>
+    <div class="metric"><div class="l">CÒN PHẢI TRẢ (ÂM)</div><div class="v num neg">${formatNumber(phaiTra)}</div></div>`;
+
+  if(active.length===0){
+    wrap.innerHTML = `<div class="empty-state"><div class="t">Chưa có dữ liệu trong kỳ này</div><div>Thêm giao dịch ở tab Chi tiền, hoặc bấm "Xem tất cả".</div></div>`;
+    return;
+  }
+  const cell = v => v===0 ? `<span class="num zero">0</span>` : `<span class="num ${v>0?'pos':'neg'}">${v>0?'+':'−'}${formatNumber(Math.abs(v))}</span>`;
+  const body = active.map((r,i)=>`
+    <tr>
+      <td style="width:46px;color:#AFAFAF;">${i+1}</td>
+      <td><div style="font-weight:600;">${escapeHtml(r.name)}</div>${r.tracked?`<div class="sub-line">Theo dõi sổ chi tiền</div>`:''}</td>
+      <td class="r"><span class="num ${r.opening?'':'zero'}">${formatNumber(r.opening)}</span></td>
+      <td class="r"><span class="num ${r.dua?'':'zero'}">${formatNumber(r.dua)}</span></td>
+      <td class="r"><span class="num ${r.nhan?'':'zero'}">${formatNumber(r.nhan)}</span></td>
+      <td class="r">${cell(r.phatSinh)}</td>
+      <td class="r">${r.luyKe===0?`<span class="num zero">0</span>`:`<span class="num ${r.luyKe>0?'pos':'neg'}">${r.luyKe<0?'−':''}${formatNumber(Math.abs(r.luyKe))}</span>`}</td>
+      <td class="r"><span class="num-sm">${r.count}</span></td>
+      <td><span class="sub-line">${r.last?`${formatDateVN(r.last.date)} · ${escapeHtml(r.last.desc || (r.last.giver+' → '+r.last.receiver))}`:'—'}</span></td>
+    </tr>`).join('');
+  const sum = f => active.reduce((s,r)=>s+r[f],0);
+  wrap.innerHTML = `
+    <table class="grid">
+      <thead><tr>
+        <th style="width:46px;">#</th><th>TÊN</th><th class="r">DƯ ĐẦU KỲ</th><th class="r">TỔNG ĐƯA (NỢ)</th>
+        <th class="r">TỔNG NHẬN (CÓ)</th><th class="r">PHÁT SINH</th><th class="r">LUỸ KẾ CUỐI KỲ</th>
+        <th class="r">SỐ GD</th><th>GIAO DỊCH GẦN NHẤT</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+      <tfoot><tr>
+        <td></td><td>TỔNG CỘNG · ${active.length} người</td>
+        <td class="r num">${formatNumber(sum('opening'))}</td>
+        <td class="r num">${formatNumber(sum('dua'))}</td>
+        <td class="r num">${formatNumber(sum('nhan'))}</td>
+        <td class="r">${cell(sum('phatSinh'))}</td>
+        <td class="r num">${formatNumber(sum('luyKe'))}</td>
+        <td class="r num">${formatNumber(totalCount)}</td><td></td>
+      </tr></tfoot>
+    </table>`;
+}
+function exportGrandSummaryExcel(){
+  const from = document.getElementById('grandFrom')?.value;
+  const to = document.getElementById('grandTo')?.value;
+  const { rows, totalCount } = buildGrandSummary(from, to);
+  const active = rows.filter(r=> r.count>0 || r.opening!==0);
+  if(active.length===0){ alert("Không có dữ liệu để xuất"); return; }
+  const out = [["DANH SÁCH TỔNG — TẤT CẢ MỌI NGƯỜI"],
+    [`Kỳ: ${from?formatDateVN(from):'đầu sổ'} - ${to?formatDateVN(to):'nay'}`],[],
+    ["STT","Tên","Dư đầu kỳ","Tổng đưa (Nợ)","Tổng nhận (Có)","Phát sinh","Luỹ kế cuối kỳ","Số GD","Giao dịch gần nhất"]];
+  active.forEach((r,i)=> out.push([i+1, r.name, r.opening, r.dua, r.nhan, r.phatSinh, r.luyKe, r.count,
+    r.last ? `${formatDateVN(r.last.date)} · ${r.last.desc || (r.last.giver+' → '+r.last.receiver)}` : '']));
+  const sum = f => active.reduce((s,r)=>s+r[f],0);
+  out.push(["","TỔNG CỘNG", sum('opening'), sum('dua'), sum('nhan'), sum('phatSinh'), sum('luyKe'), totalCount, ""]);
+  const ws = XLSX.utils.aoa_to_sheet(out);
+  ws['!cols'] = [{wch:5},{wch:24},{wch:16},{wch:18},{wch:18},{wch:16},{wch:18},{wch:8},{wch:34}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Danh sach tong");
+  XLSX.writeFile(wb, `danh-sach-tong-${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+function viewGrandSummaryImage(){
+  viewAndShareCapture('grandSummaryCapture', `danh-sach-tong-${new Date().toISOString().slice(0,10)}.png`);
+}
+function printGrandSummary(){
+  const el = document.getElementById('grandSummaryCapture');
+  if(!el) return;
+  printViaNewWindow(el, 'Danh sách tổng');
 }
 
 /* ---- Xuất Excel / Xem+Chia sẻ / In A4 ---- */
@@ -1443,6 +2006,8 @@ function handleMoneyAmountInput(e, rowId){
   const raw = el.value.replace(/[^\d]/g,'');
   updateMoneyEntryField(rowId, 'amount', raw ? Number(raw) : '');
   scheduleMoneyReformat(el);
+  updateAmountWords(rowId);
+  updateEntryDraftTotal();
 }
 function handleMoneyAmountEditInput(e){
   const el = e.target;
@@ -1524,6 +2089,14 @@ function attachMoneyEntryPasteHandlers(){
 }
 
 renderTasks();
+renderTagChips();
+updateDueHint();
+collapseComposer();
+let vcResizeTimer = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(vcResizeTimer);
+  vcResizeTimer = setTimeout(()=>{ if(moneySection==='entries') renderMoneyEntryRows(); }, 250);
+});
 setTimeout(hideLoadingOverlay, 8000);
 if(document.readyState==='complete'){ cloudInit(); }
 else{ window.addEventListener('load', cloudInit); }
@@ -1549,14 +2122,6 @@ function checkBackupReminder(){
   }
 }
 
-function positionStickyHeader(){
-  const tabsEl = document.querySelector('.tabs');
-  const headerEl = document.getElementById('taskStickyHeader');
-  if(tabsEl && headerEl){ headerEl.style.top = tabsEl.offsetHeight + 'px'; }
-}
-window.addEventListener('resize', positionStickyHeader);
-positionStickyHeader();
-setTimeout(positionStickyHeader, 300);
 
 /* ===== THÔNG BÁO KHI QUÁ HẠN ===== */
 function updateNotifBtn(){
@@ -1580,7 +2145,7 @@ function requestNotificationPermission(){
   Notification.requestPermission().then(async p=>{
     updateNotifBtn();
     if(p==="granted"){
-      new Notification("Đã bật thông báo", { body: "Bạn sẽ được nhắc khi có việc quá hạn hoặc chưa xong sau 4 giờ — kể cả khi đóng app." });
+      new Notification("Đã bật thông báo", { body: "Việc có đặt hạn: nhắc theo hạn. Việc không đặt hạn: nhắc sau 4 giờ nếu chưa xong." });
       // Đăng ký thêm thông báo đẩy (chạy cả khi đóng app), nếu trình duyệt hỗ trợ
       if(vcMessaging && fsDb){
         try{
@@ -1597,23 +2162,45 @@ function requestNotificationPermission(){
     }
   });
 }
+function pushLocalNotification(title, body){
+  try{ new Notification(title, { body }); }catch(e){}
+}
 function checkOverdueNotifications(){
   if(!("Notification" in window) || Notification.permission !== "granted") return;
-  const now = new Date();
+  const now = Date.now();
   let changed = false;
   tasks.forEach(t=>{
-    // 1) Nhắc khi quá giờ hẹn (nếu có đặt lịch)
-    if(t.status!=="done" && t.dueAt && !t.notified && new Date(t.dueAt) < now){
-      try{ new Notification("Việc quá hạn ⏰", { body: t.title }); }catch(e){}
-      t.notified = true;
-      changed = true;
-    }
-    // 2) Nhắc tự động sau 4 giờ kể từ lúc tạo việc (hoặc mở lại), dù có đặt lịch hay không
-    const base = t.reminderBaseAt || t.createdAt;
-    if(t.status!=="done" && !t.notified4h && base && (now.getTime() - base) >= 4*60*60*1000){
-      try{ new Notification("Việc chưa xong sau 4 giờ ⏰", { body: t.title }); }catch(e){}
-      t.notified4h = true;
-      changed = true;
+    if(t.status==="done") return;
+    const rr = Number(t.repeatRemind||0);
+
+    if(t.dueAt){
+      /* CÓ ĐẶT HẠN: chỉ nhắc theo hạn. KHÔNG áp dụng quy tắc "sau 4 giờ" nữa. */
+      const due = new Date(t.dueAt).getTime();
+      const rb = Number(t.remindBefore||0);
+      if(rb>0 && !t.notifiedBefore && now >= due - rb*60000 && now < due){
+        pushLocalNotification("Sắp tới hạn ⏰", t.title + " — còn " + fmtGap(due-now));
+        t.notifiedBefore = true; changed = true;
+      }
+      if(!t.notified && now >= due){
+        pushLocalNotification("Việc quá hạn ⏰", t.title);
+        t.notified = true; t.lastRemindAt = now; changed = true;
+      }
+      if(rr>0 && t.notified && now >= (t.lastRemindAt||due) + rr*60000){
+        pushLocalNotification("Vẫn chưa xong ⏰", t.title);
+        t.lastRemindAt = now; changed = true;
+      }
+    }else{
+      /* KHÔNG ĐẶT HẠN: mới dùng quy tắc nhắc sau N giờ kể từ lúc tạo (mặc định 4 giờ). */
+      const base = t.reminderBaseAt || t.createdAt;
+      const every = rr>0 ? rr : 240;
+      if(base && !t.notified4h && (now - base) >= every*60000){
+        pushLocalNotification("Việc chưa xong sau " + fmtMinutes(every) + " ⏰", t.title);
+        t.notified4h = true; t.lastRemindAt = now; changed = true;
+      }
+      if(rr>0 && t.notified4h && now >= (t.lastRemindAt||0) + rr*60000){
+        pushLocalNotification("Vẫn chưa xong ⏰", t.title);
+        t.lastRemindAt = now; changed = true;
+      }
     }
   });
   if(changed) saveJSON(TASK_KEY, tasks);
