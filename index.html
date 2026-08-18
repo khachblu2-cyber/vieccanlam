@@ -1,6 +1,6 @@
 <!--
 ==================================================================
-  VIỆC CẦN LÀM & SỔ THU CHI — V1.5.1  (17/08/2026)
+  VIỆC CẦN LÀM & SỔ THU CHI — V1.5.2  (18/08/2026)
   Tệp gốc: Viec-can-lam-V1_4_0.html (md5 25fb19435c217ba4b838579757587774)
 ------------------------------------------------------------------
   THAY ĐỔI SO VỚI V1.4.0
@@ -25,6 +25,19 @@
      hết màn hình cao 58px cỡ chữ 24px, có dòng ĐỌC SỐ BẰNG CHỮ và
      nút cộng nhanh +1/+10/+100 triệu.
   8. Đã dán VAPID key thật (trước đó còn là DÁN_VAPID_KEY_TẠI_ĐÂY).
+------------------------------------------------------------------
+  V1.5.2 (18/08/2026)
+  a. Tab Chi tiền mở ra chỉ 1 thẻ giao dịch (trước là 3).
+  b. Sổ chi tiền trên ĐIỆN THOẠI: bỏ bảng 6 cột (bị bóp nát, mất số),
+     đổi thành thẻ — viền trái đỏ = Nợ, xanh = Có; có khối tóm tắt
+     dư đầu kỳ / tổng Nợ / tổng Có / luỹ kế cuối kỳ.
+  c. Sổ chi tiền trên MÁY TÍNH và bản XUẤT ẢNH / IN A4: dựng lại
+     bảng — tiêu đề có tên người + kỳ + ngày xuất, cột cố định bề rộng
+     nên chữ dài tự xuống dòng không mất chữ, ô trống hiện dấu "—",
+     dấu âm dùng "−" thay gạch nối, dòng Tổng nằm đúng cột.
+     Tô xanh dương nhẹ các cột số (STT, Ngày, Nợ, Có, Luỹ kế).
+  d. Xuất ảnh / in A4 luôn ra dạng BẢNG kể cả khi đang xem trên
+     điện thoại (bỏ lớp desk-only, loại bỏ phần mob-only khi nhân bản).
 ------------------------------------------------------------------
   CÒN LẠI PHẢI LÀM: upload firebase-messaging-sw.js cùng thư mục;
   sửa index.js cho khớp mục 5; tối ưu thêm giao diện điện thoại.
@@ -202,6 +215,36 @@
   .total-row{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--be);border:1px solid var(--be-line);border-radius:10px;margin-top:12px;font-weight:700;font-size:16px;}
   .remaining-box{margin-top:16px;background:var(--be);border:1px solid var(--be-line);border-radius:12px;padding:15px 17px;display:flex;justify-content:space-between;align-items:center;font-weight:700;}
 
+  /* ===== Sổ chi tiền — thẻ trên điện thoại ===== */
+  .sct-sheet{background:#fff;}
+  .sct-head{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:11px;}
+  .sct-who{font-size:16px;font-weight:700;}
+  .sct-sub{font-size:12.5px;color:var(--muted2);margin-top:2px;}
+  .sct-sum3{display:flex;gap:8px;margin-top:11px;}
+  .sct-sum3 .s3{flex:1;min-width:0;background:#F6F9FD;border:1px solid #E6EDF7;border-radius:9px;padding:8px 7px;text-align:center;}
+  .sct-sum3 .l{font-size:10.5px;color:var(--muted2);letter-spacing:.4px;}
+  .sct-sum3 .v{font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:12.5px;font-weight:700;margin-top:3px;word-break:break-all;}
+  .sct-big{margin-top:9px;background:#E6EDF7;border:1px solid #CBD8EC;border-radius:10px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .sct-big .l{font-size:12.5px;font-weight:700;color:#1C407A;}
+  .sct-big .v{font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:19px;font-weight:700;letter-spacing:-.4px;}
+  .sct-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:9px;}
+  .sct-card.no{border-left:3px solid #E0A99B;}
+  .sct-card.co{border-left:3px solid #9BC4AE;}
+  .sct-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .sct-stt{font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-size:11.5px;color:#AFAFAF;}
+  .sct-date{font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-size:13px;color:#6A6A6A;margin-top:1px;}
+  .sct-tag{font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:5px;}
+  .sct-tag.t-no{background:#FBEAE6;color:#8E2F1B;}
+  .sct-tag.t-co{background:#E8F1EC;color:#2C5A42;}
+  .sct-amt{font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:17px;font-weight:700;margin-top:4px;letter-spacing:-.3px;}
+  .sct-desc{font-size:15px;line-height:1.4;margin-top:8px;word-break:break-word;}
+  .sct-bot{display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding-top:8px;border-top:1px solid #F1F1F0;}
+  .sct-lk{font-size:12px;color:var(--muted2);}
+  .sct-lkv{font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:14px;font-weight:700;}
+  .sct-tot{background:#E6EDF7;border:1px solid #CBD8EC;border-radius:11px;padding:12px 13px;margin-top:12px;}
+  .sct-tot .trow{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:13.5px;}
+  .sct-tot .trow.b{font-weight:700;font-size:15px;border-top:1px solid #CBD8EC;margin-top:6px;padding-top:9px;}
+
   /* Bảng nhập giao dịch (máy tính) */
   .money-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:11px;border:1px solid var(--line);}
   table.money-grid{width:100%;border-collapse:collapse;table-layout:auto;min-width:900px;font-size:15px;}
@@ -276,7 +319,7 @@
       <button class="icon-sm-btn tap" onclick="document.getElementById('backupFileInput').click()" title="Nhập dữ liệu từ file sao lưu">⬆</button>
       <button class="icon-sm-btn tap" onclick="toggleSearch()" title="Tìm việc">🔍</button>
     </div>
-    <div class="ver-label">V1.5.1</div>
+    <div class="ver-label">V1.5.2</div>
   </div>
 </div>
 <div class="wrap"><div class="save-status" id="cloudStatus" style="margin-top:6px;"></div></div>
@@ -1340,6 +1383,8 @@ function printViaNewWindow(el, title){
   if(!el) return;
   const clone = el.cloneNode(true);
   clone.querySelectorAll('.no-export').forEach(n=>n.remove());
+  clone.querySelectorAll('.mob-only').forEach(n=>n.remove());
+  clone.querySelectorAll('.desk-only').forEach(n=>n.classList.remove('desk-only'));
   const win = window.open('', '_blank');
   if(!win){ alert('Trình duyệt đang chặn cửa sổ in — vui lòng cho phép popup cho trang này rồi thử lại.'); return; }
   win.document.open();
@@ -1364,7 +1409,7 @@ function printViaNewWindow(el, title){
     <script>
       window.addEventListener('load', function(){
         var wrap = document.getElementById('printContentWrap');
-        var table = wrap.querySelector('table.money-grid, table.grid');
+        var table = wrap.querySelector('table.money-grid, table.grid, table.sct-grid');
         if(table){
           table.style.transform = 'none';
           var available = wrap.clientWidth;
@@ -1396,7 +1441,7 @@ function emptyMoneyEntryRow(){
   const y = new Date(); y.setDate(y.getDate()-1);
   return { id: uid(), date: y.toISOString().slice(0,10), giver:'', receiver:'', amount:'', desc:'', note:'' };
 }
-function initMoneyEntryRows(){ moneyEntryRows = [emptyMoneyEntryRow(), emptyMoneyEntryRow(), emptyMoneyEntryRow()]; }
+function initMoneyEntryRows(){ moneyEntryRows = [emptyMoneyEntryRow()]; }
 function addMoneyEntryRow(){ moneyEntryRows.push(emptyMoneyEntryRow()); renderMoneyEntryRows(); }
 function removeMoneyEntryRow(id){
   moneyEntryRows = moneyEntryRows.filter(r=>r.id!==id);
@@ -1658,6 +1703,144 @@ function buildPersonLedger(name, fromDate, toDate){
   });
   return { opening, rows, ending: running };
 }
+function fmtSigned(n){
+  return String(formatNumber(n)).replace('-', '\u2212');
+}
+function sctPeriodLabel(rows, fFrom, fTo){
+  const f = fFrom || (rows.length ? rows[0].date : '');
+  const t = fTo   || (rows.length ? rows[rows.length-1].date : '');
+  if(!f && !t) return 'Toàn bộ thời gian';
+  return 'Kỳ: ' + (f?formatDateVN(f):'đầu sổ') + ' – ' + (t?formatDateVN(t):'nay');
+}
+
+/* ---- Bảng sổ chi tiền: dùng cho màn hình máy tính VÀ cho ảnh xuất / in A4 ---- */
+function buildDetailSheet(receiver, opening, rows, ending, totalNo, totalCo, periodLabel){
+  const MONO = "font-family:'JetBrains Mono','IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.3px;";
+  const TH   = "padding:10px 9px;border:1px solid #CBD8EC;background:#E6EDF7;color:#1C407A;font-size:11.5px;font-weight:700;letter-spacing:.6px;text-align:center;";
+  const TD   = "padding:9px 9px;border:1px solid #E4E4E1;vertical-align:middle;line-height:1.35;font-size:13.5px;";
+  const TDN  = "padding:9px 7px;border:1px solid #E4E4E1;vertical-align:middle;line-height:1.35;font-size:13px;white-space:nowrap;";
+  const NUMBG  = ["background:#F6F9FD;", "background:#F1F6FC;"];
+  const TXTBG  = ["background:#FFFFFF;", "background:#FAFAFA;"];
+  const RED = "color:#A3341C;", GREEN = "color:#2C5A42;", GRAY = "color:#BDBDBD;";
+
+  function numCell(v, colorStyle, z){
+    const bg = NUMBG[z%2];
+    return `<td style="${TDN}${bg}${MONO}text-align:right;font-weight:700;${v?colorStyle:GRAY}">${v?fmtSigned(v):'—'}</td>`;
+  }
+
+  const openingRow = `
+    <tr>
+      <td style="${TD}background:#F1F1F0;text-align:center;font-weight:700;">—</td>
+      <td style="${TD}background:#F1F1F0;text-align:center;font-weight:700;${MONO}font-size:12.5px;">—</td>
+      <td style="${TD}background:#F1F1F0;font-weight:700;">Số dư đầu kỳ</td>
+      <td style="${TD}background:#F1F1F0;text-align:right;${MONO}${GRAY}">—</td>
+      <td style="${TD}background:#F1F1F0;text-align:right;${MONO}${GRAY}">—</td>
+      <td style="${TDN}background:#F1F1F0;text-align:right;font-weight:700;${MONO}">${fmtSigned(opening)}</td>
+      <td class="no-export" style="${TD}background:#F1F1F0;"></td>
+    </tr>`;
+
+  const bodyRows = rows.map((r,i)=>{
+    const z = (i+1) % 2;
+    return `<tr>
+      <td style="${TD}${NUMBG[z]}text-align:center;${MONO}font-size:12.5px;">${i+1}</td>
+      <td style="${TD}${NUMBG[z]}text-align:center;${MONO}font-size:12.5px;">${formatDateVN(r.date)}</td>
+      <td style="${TD}${TXTBG[z]}">${escapeHtml(r.desc)}${r.note?` · ${escapeHtml(r.note)}`:''}</td>
+      ${numCell(r.no, RED, z)}
+      ${numCell(r.co, GREEN, z)}
+      <td style="${TDN}${NUMBG[z]}text-align:right;font-weight:700;${MONO}${r.luyKe<0?RED:''}">${fmtSigned(r.luyKe)}</td>
+      <td class="no-export" style="${TD}${TXTBG[z]}text-align:center;white-space:nowrap;">
+        <button class="del-btn" style="padding:2px;" onclick="editMoneyEntry('${r.id}')" title="Sửa">✏️</button>
+        <button class="del-btn" style="padding:2px;" onclick="deleteMoneyEntry('${r.id}')" title="Xoá">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const TF  = "background:#DEE8F6;border:1px solid #BFD1EA;font-weight:700;font-size:14.5px;padding:11px 9px;";
+  const TFN = "background:#DEE8F6;border:1px solid #BFD1EA;font-weight:700;font-size:13px;padding:11px 7px;white-space:nowrap;";
+  return `
+  <div style="padding:2px;">
+    <div style="text-align:center;padding-bottom:14px;border-bottom:2px solid #1C407A;">
+      <div style="font-size:22px;font-weight:700;letter-spacing:1.5px;">SỔ CHI TIỀN</div>
+      <div style="font-size:16px;font-weight:700;margin-top:6px;">${escapeHtml(receiver)}</div>
+      <div style="font-size:12.5px;color:#6A6A6A;margin-top:5px;">${periodLabel} · ${rows.length} khoản · Xuất ngày ${formatDateVN(new Date().toISOString().slice(0,10))}</div>
+    </div>
+    <div style="font-size:11.5px;color:#8A8A8A;text-align:right;margin:9px 0 5px;font-style:italic;">Đơn vị tính: VNĐ</div>
+    <table class="sct-grid" style="width:100%;border-collapse:collapse;table-layout:fixed;">
+      <colgroup>
+        <col style="width:5.5%;"><col style="width:11.5%;"><col style="width:26.5%;">
+        <col style="width:16.5%;"><col style="width:16.5%;"><col style="width:17.5%;">
+        <col class="no-export" style="width:6%;">
+      </colgroup>
+      <thead><tr>
+        <th style="${TH}">STT</th><th style="${TH}">NGÀY THÁNG</th><th style="${TH}text-align:left;">DIỄN GIẢI</th>
+        <th style="${TH}">NỢ</th><th style="${TH}">CÓ</th><th style="${TH}">LUỸ KẾ</th>
+        <th class="no-export" style="${TH}"></th>
+      </tr></thead>
+      <tbody>${openingRow}${bodyRows}</tbody>
+      <tfoot><tr>
+        <td colspan="3" style="${TF}text-align:left;">TỔNG CỘNG · ${rows.length} khoản</td>
+        <td style="${TFN}text-align:right;${MONO}${totalNo?'color:#A3341C;':'color:#BDBDBD;'}">${fmtSigned(totalNo)}</td>
+        <td style="${TFN}text-align:right;${MONO}${totalCo?'color:#2C5A42;':'color:#BDBDBD;'}">${fmtSigned(totalCo)}</td>
+        <td style="${TFN}text-align:right;${MONO}${ending<0?'color:#A3341C;':''}">${fmtSigned(ending)}</td>
+        <td class="no-export" style="${TF}"></td>
+      </tr></tfoot>
+    </table>
+    <div style="font-size:11.5px;color:#8A8A8A;margin-top:13px;line-height:1.6;">
+      Quy ước: <b>Nợ</b> = số tiền người này đưa ra · <b>Có</b> = số tiền người này nhận vào · <b>Luỹ kế</b> = dư đầu kỳ + Nợ − Có.
+    </div>
+  </div>`;
+}
+
+/* ---- Thẻ sổ chi tiền cho điện thoại ---- */
+function buildDetailCards(receiver, opening, rows, ending, totalNo, totalCo, periodLabel){
+  const cards = rows.map((r,i)=>{
+    const isNo = r.no > 0;
+    return `
+    <div class="sct-card ${isNo?'no':'co'}">
+      <div class="sct-top">
+        <div>
+          <div class="sct-stt">#${i+1}</div>
+          <div class="sct-date">${formatDateVN(r.date)}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <span class="sct-tag ${isNo?'t-no':'t-co'}">${isNo?'NỢ':'CÓ'}</span>
+          <div class="sct-amt ${isNo?'neg':'pos'}">${fmtSigned(isNo?r.no:r.co)}</div>
+        </div>
+      </div>
+      <div class="sct-desc">${escapeHtml(r.desc)}${r.note?` · ${escapeHtml(r.note)}`:''}</div>
+      <div class="sct-bot">
+        <span class="sct-lk">Luỹ kế</span>
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span class="sct-lkv ${r.luyKe<0?'neg':'pos'}">${fmtSigned(r.luyKe)}</span>
+          <span>
+            <button class="del-btn" style="padding:2px 4px;" onclick="editMoneyEntry('${r.id}')" title="Sửa">✏️</button>
+            <button class="del-btn" style="padding:2px 4px;" onclick="deleteMoneyEntry('${r.id}')" title="Xoá">🗑</button>
+          </span>
+        </span>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="sct-head">
+    <div class="sct-who">${escapeHtml(receiver)}</div>
+    <div class="sct-sub">${rows.length} khoản · ${periodLabel}</div>
+    <div class="sct-sum3">
+      <div class="s3"><div class="l">DƯ ĐẦU KỲ</div><div class="v">${fmtSigned(opening)}</div></div>
+      <div class="s3"><div class="l">TỔNG NỢ</div><div class="v ${totalNo?'neg':''}">${fmtSigned(totalNo)}</div></div>
+      <div class="s3"><div class="l">TỔNG CÓ</div><div class="v ${totalCo?'pos':''}">${fmtSigned(totalCo)}</div></div>
+    </div>
+    <div class="sct-big"><div class="l">LUỸ KẾ CUỐI KỲ</div><div class="v ${ending<0?'neg':'pos'}">${fmtSigned(ending)}</div></div>
+  </div>
+  ${cards}
+  <div class="sct-tot">
+    <div class="trow"><span>Số dư đầu kỳ</span><span class="num-sm">${fmtSigned(opening)}</span></div>
+    <div class="trow"><span>Tổng Nợ (${rows.length} khoản)</span><span class="num-sm ${totalNo?'neg':''}">${fmtSigned(totalNo)}</span></div>
+    <div class="trow"><span>Tổng Có</span><span class="num-sm ${totalCo?'pos':''}">${fmtSigned(totalCo)}</span></div>
+    <div class="trow b"><span>LUỸ KẾ CUỐI KỲ</span><span class="num ${ending<0?'neg':'pos'}">${fmtSigned(ending)}</span></div>
+  </div>`;
+}
+
 function renderMoneyDetail(){
   const wrap = document.getElementById('moneyDetailList');
   const receiver = document.getElementById('detailReceiverSelect')?.value;
@@ -1669,13 +1852,14 @@ function renderMoneyDetail(){
   if(rows.length===0 && !opening){ wrap.innerHTML = `<div class="empty-state" style="padding:24px 8px;"><div class="t">Chưa có khoản nào cho "${escapeHtml(receiver)}"</div></div>`; return; }
   const totalNo = rows.reduce((s,r)=>s+r.no,0);
   const totalCo = rows.reduce((s,r)=>s+r.co,0);
+  const periodLabel = sctPeriodLabel(rows, fFrom, fTo);
 
   const editRows = ledger.entries.filter(e=>editingMoneyEntryId===e.id).map(e=>`
-    <div class="history-item" style="margin-top:10px;">
+    <div class="history-item no-export" style="margin-top:10px;">
       <div class="row-flex"><input type="date" id="editMEDate-${e.id}" value="${e.date}"></div>
       <div class="row-flex" style="margin-top:6px;">
-        <select id="editMEGiver-${e.id}" style="flex:1;padding:8px 6px;border-radius:9px;border:1px solid var(--line);">${nameOptionsHtml(e.giver)}</select>
-        <select id="editMEReceiver-${e.id}" style="flex:1;padding:8px 6px;border-radius:9px;border:1px solid var(--line);">${nameOptionsHtml(e.receiver)}</select>
+        <select id="editMEGiver-${e.id}" style="flex:1;">${nameOptionsHtml(e.giver)}</select>
+        <select id="editMEReceiver-${e.id}" style="flex:1;">${nameOptionsHtml(e.receiver)}</select>
       </div>
       <div class="row-flex" style="margin-top:6px;">
         <input type="text" id="editMEAmount-${e.id}" data-raw="${e.amount}" value="${formatNumber(e.amount)}" inputmode="decimal" oninput="handleMoneyAmountEditInput(event)" onblur="forceReformatAmount(event)">
@@ -1685,56 +1869,17 @@ function renderMoneyDetail(){
         <input type="text" id="editMENote-${e.id}" value="${escapeHtml(e.note||'')}" placeholder="Ghi chú" style="flex:1;">
       </div>
       <div class="row-flex" style="margin-top:8px;">
-        <button class="btn-done" onclick="saveEditMoneyEntry('${e.id}')">✓ Lưu</button>
-        <button class="btn-snooze" onclick="cancelEditMoneyEntry()">Huỷ</button>
+        <button class="btn-done tap" onclick="saveEditMoneyEntry('${e.id}')">✓ Lưu</button>
+        <button class="btn-ghost tap" onclick="cancelEditMoneyEntry()">Huỷ</button>
       </div>
     </div>
   `).join('');
 
-  const openingRow = `
-    <tr style="background:#F5F5F4;font-weight:700;">
-      <td></td><td style="text-align:center;font-family:'IBM Plex Mono',monospace;">—</td>
-      <td style="text-align:left;">Số dư đầu kỳ</td>
-      <td></td><td></td>
-      <td style="text-align:right;font-family:'IBM Plex Mono',monospace;">${formatNumber(opening)}</td>
-      <td class="no-export"></td>
-    </tr>`;
-  const bodyRows = rows.map((r,i)=>`
-    <tr>
-      <td style="text-align:center;">${i+1}</td>
-      <td style="text-align:center;font-family:'IBM Plex Mono',monospace;">${formatDateVN(r.date)}</td>
-      <td style="text-align:left;">${escapeHtml(r.desc)}${r.note?` · ${escapeHtml(r.note)}`:''}</td>
-      <td style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#C9472E;">${r.no?formatNumber(r.no):''}</td>
-      <td style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#3F7A5C;">${r.co?formatNumber(r.co):''}</td>
-      <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700;">${formatNumber(r.luyKe)}</td>
-      <td class="no-export" style="text-align:center;white-space:nowrap;">
-        <button class="del-btn" style="padding:2px;" onclick="editMoneyEntry('${r.id}')" title="Sửa">✏️</button>
-        <button class="del-btn" style="padding:2px;" onclick="deleteMoneyEntry('${r.id}')" title="Xoá">🗑</button>
-      </td>
-    </tr>
-  `).join('');
-
-  wrap.innerHTML = `
-    <div class="font-display" style="font-size:19px;font-weight:600;text-align:center;margin-bottom:2px;">SỔ CHI TIỀN</div>
-    <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;">${rows.length} khoản · Người: ${escapeHtml(receiver)}</div>
-    <div class="money-table-wrap">
-      <table class="money-grid" style="table-layout:auto;width:100%;min-width:620px;">
-        <thead><tr><th style="width:6%;">STT</th><th style="width:13%;">Ngày tháng</th><th style="width:29%;">Diễn Giải</th><th style="width:15%;">Nợ</th><th style="width:15%;">Có</th><th style="width:16%;">Luỹ kế</th><th class="no-export" style="width:6%;"></th></tr></thead>
-        <tbody>${openingRow}${bodyRows}
-          <tr style="background:#F2E9D8;">
-            <td colspan="3" style="text-align:center;font-weight:800;font-size:15px;">Tổng</td>
-            <td style="text-align:right;font-weight:800;font-family:'IBM Plex Mono',monospace;color:#C9472E;">${formatNumber(totalNo)}</td>
-            <td style="text-align:right;font-weight:800;font-family:'IBM Plex Mono',monospace;color:#3F7A5C;">${formatNumber(totalCo)}</td>
-            <td style="text-align:right;font-weight:800;font-family:'IBM Plex Mono',monospace;font-size:17px;color:#C9472E;">${formatNumber(ending)}</td>
-            <td class="no-export"></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    ${editRows}
-  `;
+  wrap.innerHTML =
+    `<div class="sct-sheet desk-only">${buildDetailSheet(receiver, opening, rows, ending, totalNo, totalCo, periodLabel)}</div>` +
+    `<div class="mob-only no-export">${buildDetailCards(receiver, opening, rows, ending, totalNo, totalCo, periodLabel)}</div>` +
+    editRows;
 }
-
 /* ---- Danh sách tổng: tất cả mọi người ---- */
 function buildGrandSummary(from, to){
   const stats = {};
@@ -1912,6 +2057,8 @@ function buildOffscreenClone(el){
   clone.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff;padding:16px;width:820px;font-family:inherit;';
   clone.innerHTML = el.innerHTML;
   clone.querySelectorAll('.no-export').forEach(n=> n.remove());
+  clone.querySelectorAll('.mob-only').forEach(n=> n.remove());
+  clone.querySelectorAll('.desk-only').forEach(n=> n.classList.remove('desk-only'));
   clone.querySelectorAll('.money-table-wrap').forEach(w=>{ w.style.overflow='visible'; });
   document.body.appendChild(clone);
   return clone;
