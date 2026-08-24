@@ -1,6 +1,6 @@
 <!--
 ==================================================================
-  VIỆC CẦN LÀM & SỔ THU CHI — V1.5.2  (18/08/2026)
+  VIỆC CẦN LÀM & SỔ THU CHI — V1.5.3  (18/08/2026)
   Tệp gốc: Viec-can-lam-V1_4_0.html (md5 25fb19435c217ba4b838579757587774)
 ------------------------------------------------------------------
   THAY ĐỔI SO VỚI V1.4.0
@@ -39,6 +39,21 @@
   d. Xuất ảnh / in A4 luôn ra dạng BẢNG kể cả khi đang xem trên
      điện thoại (bỏ lớp desk-only, loại bỏ phần mob-only khi nhân bản).
 ------------------------------------------------------------------
+  V1.5.3 (18/08/2026)
+  e. Thêm vào MÀN HÌNH CHÍNH iPhone: icon nền be dấu ✓ đen, tên ngắn
+     "Việc cần làm", mở toàn màn hình không có thanh Safari.
+     >> CẦN UPLOAD KÈM 4 FILE cùng thư mục trên GitHub Pages:
+        manifest.json, apple-touch-icon.png, icon-192.png, icon-512.png
+     >> iPhone CHỈ cho đẩy thông báo khi app đã ở màn hình chính.
+  f. Gõ câu tiếng Việt là app tự hiểu ngày giờ: "mai 8h gọi anh Hiệp".
+     Hiện khung xanh "APP HIỂU LÀ" để xác nhận trước khi lưu, có nút
+     "Bỏ đoán" nếu đoán sai. Chạy trên máy, không cần mạng, 0đ.
+     Hiểu: hôm nay/mai/mốt, thứ 2..CN, tuần sau, cuối tuần, cuối tháng,
+     đầu tháng sau, 15/9, 8h, 8h30, sáng/trưa/chiều/tối,
+     gấp/quan trọng, mỗi ngày/tuần/tháng/quý.
+  g. Bỏ dòng "Lưu ngay trên máy…", trạng thái rút gọn còn
+     "☁️ Đã đồng bộ Firebase".
+------------------------------------------------------------------
   CÒN LẠI PHẢI LÀM: upload firebase-messaging-sw.js cùng thư mục;
   sửa index.js cho khớp mục 5; tối ưu thêm giao diện điện thoại.
 ==================================================================
@@ -55,7 +70,15 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Việc cần làm">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Việc cần làm & Sổ thu chi</title>
+<title>Việc cần làm &amp; Sổ thu chi</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Việc cần làm">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FAFAFA">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
@@ -215,6 +238,13 @@
   .total-row{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:var(--be);border:1px solid var(--be-line);border-radius:10px;margin-top:12px;font-weight:700;font-size:16px;}
   .remaining-box{margin-top:16px;background:var(--be);border:1px solid var(--be-line);border-radius:12px;padding:15px 17px;display:flex;justify-content:space-between;align-items:center;font-weight:700;}
 
+  /* Khung "app hiểu là" dưới ô nhập */
+  .parse-preview{background:#EAF3EC;border:1px solid #BFDCC9;border-radius:10px;padding:10px 12px;margin-bottom:9px;}
+  .pp-l{font-size:10.5px;font-weight:700;color:#2C5A42;letter-spacing:.6px;}
+  .pp-r{font-size:14px;margin-top:5px;line-height:1.45;}
+  .pp-chip{display:inline-block;font-size:12px;font-weight:600;background:#fff;border:1px solid #BFDCC9;color:#2C5A42;padding:4px 9px;border-radius:6px;margin:7px 6px 0 0;}
+  .pp-chip.pp-x{border-style:dashed;color:#6A6A6A;cursor:pointer;}
+
   /* ===== Sổ chi tiền — thẻ trên điện thoại ===== */
   .sct-sheet{background:#fff;}
   .sct-head{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:11px;}
@@ -319,7 +349,7 @@
       <button class="icon-sm-btn tap" onclick="document.getElementById('backupFileInput').click()" title="Nhập dữ liệu từ file sao lưu">⬆</button>
       <button class="icon-sm-btn tap" onclick="toggleSearch()" title="Tìm việc">🔍</button>
     </div>
-    <div class="ver-label">V1.5.2</div>
+    <div class="ver-label">V1.5.3</div>
   </div>
 </div>
 <div class="wrap"><div class="save-status" id="cloudStatus" style="margin-top:6px;"></div></div>
@@ -345,7 +375,6 @@
         <input type="text" id="searchInput" class="search-box hidden" placeholder="Tìm việc theo tên hoặc ghi chú…" oninput="renderTasks()">
       </div>
       <div id="taskListWrap"></div>
-      <div class="save-status" style="padding:14px 4px 0;">✓ Lưu ngay trên máy (không cần mạng) · bấm ⬇ để sao lưu định kỳ</div>
     </div>
   </div>
 
@@ -415,9 +444,10 @@
         </div>
       </div>
     </div>
+    <div id="parsePreview" class="parse-preview hidden"></div>
     <div class="main-input-row">
       <button class="icon-btn tap" id="optToggleBtn" onclick="toggleExpand()" title="Tuỳ chọn nhắc việc">⚙</button>
-      <input type="text" class="title-input" id="draftTitle" placeholder="Nhập việc cần làm…" onkeydown="if(event.key==='Enter')addTask()">
+      <input type="text" class="title-input" id="draftTitle" placeholder="Nhập việc… vd: mai 8h gọi anh Hiệp" oninput="onDraftTitleInput()" onkeydown="if(event.key==='Enter')addTask()">
       <button class="icon-btn primary tap" onclick="addTask()" title="Thêm việc">＋</button>
     </div>
   </div>
@@ -632,7 +662,7 @@ function updateCloudStatus(state){
     off: "",
     connecting: "☁️ Đang kết nối Firebase…",
     syncing: "☁️ Đang đồng bộ…",
-    synced: "☁️ Đã đồng bộ Firebase — an toàn dù mất dữ liệu máy",
+    synced: "☁️ Đã đồng bộ Firebase",
     error: "⚠️ Lỗi đồng bộ (dữ liệu vẫn lưu tạm trên máy)",
   };
   el.textContent = map[state] || "";
@@ -755,6 +785,7 @@ let filter = "pending";
 let expCategory = "thuong";
 let draft = { priority:"normal", repeat:"none", remindBefore:0, repeatRemind:0, tags:[], duePreset:null };
 let snoozeOpenId = null;
+let lastParsed = null;
 
 const PRIORITY = {
   urgent: { label: "GẤP",     color: "#8E2F1B", bg: "#FBEAE6" },
@@ -873,6 +904,202 @@ function toLocalInputValue(d){
   const pad = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+/* ================= ĐỌC CÂU TIẾNG VIỆT → NGÀY GIỜ / ƯU TIÊN / LẶP =================
+   Chạy ngay trên máy, không cần mạng, không tốn tiền.
+   Trả về { title, dueAt, priority, repeat, matched:[...] }
+   matched = danh sách cụm chữ đã nhận ra, dùng để cắt khỏi tên việc.
+   ============================================================================== */
+const VN_THU = { 'hai':1, '2':1, 'ba':2, '3':2, 'tư':3, 'tu':3, '4':3, 'năm':4, 'nam':4, '5':4,
+                 'sáu':5, 'sau':5, '6':5, 'bảy':6, 'bay':6, '7':6, 'chủ nhật':0, 'chu nhat':0, 'cn':0 };
+
+function boDau(s){
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
+}
+function atTime(d, h, m){ d.setHours(h, m||0, 0, 0); return d; }
+
+function docCauViec(raw){
+  const goc = String(raw||'').trim();
+  if(!goc) return { title:'', dueAt:null, priority:'normal', repeat:'none', matched:[] };
+
+  const s = boDau(goc);
+  const matched = [];
+  let priority = 'normal';
+  let repeat = 'none';
+  let base = null;
+  let gio = null, phut = 0;
+  let buoi = null;
+  let laHomNay = false;
+
+  function bat(re){
+    const m = s.match(re);
+    if(m) matched.push(m[0].trim());
+    return m;
+  }
+
+  /* --- ưu tiên --- */
+  if(bat(/\b(gap lam|rat gap|gap)\b/))                  priority = 'urgent';
+  else if(bat(/\b(quan trong|uu tien cao)\b/))          priority = 'high';
+  else if(bat(/\b(khi nao ranh|khong gap|thu thu)\b/))  priority = 'low';
+
+  /* --- lặp lại --- */
+  if(bat(/\b(moi ngay|hang ngay)\b/))                        repeat = 'daily';
+  else if(bat(/\b(ngay lam viec|cac ngay lam viec)\b/))      repeat = 'workdays';
+  else if(bat(/\b(moi tuan|hang tuan)\b/))                   repeat = 'weekly';
+  else if(bat(/\b(hai tuan mot lan|2 tuan mot lan)\b/))      repeat = 'biweekly';
+  else if(bat(/\b(moi thang|hang thang)\b/))                 repeat = 'monthly';
+  else if(bat(/\b(moi quy|hang quy)\b/))                     repeat = 'quarterly';
+
+  /* --- buổi: bắt cả cụm "chiều nay", "tối nay" để cắt sạch khỏi tên việc --- */
+  const mNay = s.match(/\b(sang|trua|chieu|toi)\s+nay\b/);
+  if(mNay){
+    matched.push(mNay[0]);
+    buoi = mNay[1];
+    laHomNay = true;
+  }else{
+    if(bat(/\b(sang som)\b/))            buoi = 'sangsom';
+    else if(bat(/\b(buoi sang|sang)\b/)) buoi = 'sang';
+    else if(bat(/\b(buoi trua|trua)\b/)) buoi = 'trua';
+    else if(bat(/\b(buoi chieu|chieu)\b/)) buoi = 'chieu';
+    else if(bat(/\b(buoi toi|toi)\b/))   buoi = 'toi';
+  }
+
+  /* --- "tuần sau" là bổ nghĩa, xử lý riêng --- */
+  const mTuanSau = s.match(/\b(tuan sau|tuan toi)\b/);
+  const coTuanSau = !!mTuanSau;
+  if(coTuanSau) matched.push(mTuanSau[0]);
+
+  /* --- thứ trong tuần --- */
+  let thuTarget = null;
+  const mThu = s.match(/\bthu\s*(hai|ba|tu|nam|sau|bay|[2-7])\b|\b(chu nhat|cn)\b/);
+  if(mThu){
+    matched.push(mThu[0]);
+    thuTarget = mThu[1] ? VN_THU[mThu[1]] : 0;
+  }
+
+  /* --- ngày cụ thể 15/9 hoặc 15/09/2026 --- */
+  let m = s.match(/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/);
+  if(m){
+    matched.push(m[0]);
+    const now = new Date();
+    let nam = m[3] ? Number(m[3]) : now.getFullYear();
+    if(nam < 100) nam += 2000;
+    base = new Date(nam, Number(m[2])-1, Number(m[1]));
+    if(!m[3] && base < new Date(now.getFullYear(), now.getMonth(), now.getDate())) base.setFullYear(nam+1);
+  }
+
+  /* --- thứ (ưu tiên hơn "tuần sau" đứng một mình) --- */
+  if(base === null && thuTarget !== null){
+    base = new Date();
+    if(coTuanSau){
+      /* "thứ X tuần sau" = tính từ thứ Hai của TUẦN KẾ TIẾP, không phải cộng thêm 7 */
+      const toiThuHai = ((8 - base.getDay()) % 7) || 7;
+      base.setDate(base.getDate() + toiThuHai + (thuTarget === 0 ? 6 : thuTarget - 1));
+    }else{
+      let add = (thuTarget - base.getDay() + 7) % 7;
+      if(add === 0) add = 7;
+      base.setDate(base.getDate() + add);
+    }
+  }
+
+  /* --- ngày tương đối --- */
+  if(base === null){
+    if(laHomNay || bat(/\bhom nay\b/)) base = new Date();
+    else if(bat(/\bngay mai\b|\bmai\b/)){ base = new Date(); base.setDate(base.getDate()+1); }
+    else if(bat(/\bngay mot\b|\bmot\b/)){ base = new Date(); base.setDate(base.getDate()+2); }
+    else if(bat(/\bcuoi tuan\b/)){ base = new Date(); base.setDate(base.getDate() + ((6 - base.getDay() + 7) % 7 || 7)); }
+    else if(bat(/\bdau thang sau\b|\bdau thang toi\b/)){ base = new Date(); base.setMonth(base.getMonth()+1, 1); }
+    else if(bat(/\bcuoi thang\b/)){ base = new Date(); base.setMonth(base.getMonth()+1, 0); }
+    else if(coTuanSau){ base = new Date(); base.setDate(base.getDate()+7); }
+    else if(bat(/\bthang sau\b|\bthang toi\b/)){ base = new Date(); base.setMonth(base.getMonth()+1); }
+  }
+
+  /* --- giờ: 8h, 8h30, 8 gio, 14:30 --- */
+  m = s.match(/\b(\d{1,2})\s*(?:h|gio|:)\s*(\d{1,2})?\b/);
+  if(m && Number(m[1]) <= 24){
+    matched.push(m[0].trim());
+    gio = Number(m[1]);
+    phut = m[2] ? Number(m[2]) : 0;
+    if(gio <= 12){
+      if(buoi === 'chieu' || buoi === 'toi'){ if(gio < 12) gio += 12; }
+      else if(buoi === 'trua' && gio < 11){ gio += 12; }
+    }
+  }
+
+  /* --- ráp lại --- */
+  let dueAt = null;
+  if(base || gio !== null || buoi){
+    const d = base ? new Date(base) : new Date();
+    if(gio !== null) atTime(d, gio, phut);
+    else if(buoi === 'sangsom') atTime(d, 6, 0);
+    else if(buoi === 'sang')    atTime(d, 8, 0);
+    else if(buoi === 'trua')    atTime(d, 11, 30);
+    else if(buoi === 'chieu')   atTime(d, 14, 0);
+    else if(buoi === 'toi')     atTime(d, 19, 0);
+    else atTime(d, 17, 0);
+    if(!base && d.getTime() < Date.now()) d.setDate(d.getDate()+1);
+    dueAt = d;
+  }
+
+  /* --- cắt các cụm đã nhận ra khỏi tên việc --- */
+  let title = goc;
+  const sGoc = boDau(goc);
+  matched.forEach(cum=>{
+    if(!cum) return;
+    const i = sGoc.indexOf(cum);
+    if(i < 0) return;
+    title = title.slice(0, i) + '\u0000'.repeat(cum.length) + title.slice(i + cum.length);
+  });
+  title = title.replace(/\u0000/g,' ')
+               .replace(/\s{2,}/g,' ')
+               .replace(/^[\s,\.\-:;]+|[\s,\.\-:;]+$/g,'')
+               .trim();
+  if(!title) title = goc;
+  title = title.charAt(0).toUpperCase() + title.slice(1);
+
+  return { title, dueAt, priority, repeat, matched };
+}
+/* ---- Khung xác nhận dưới ô nhập ---- */
+let parseDebounce = null;
+function onDraftTitleInput(){
+  clearTimeout(parseDebounce);
+  parseDebounce = setTimeout(renderParsePreview, 120);
+}
+function renderParsePreview(){
+  const box = document.getElementById('parsePreview');
+  const inp = document.getElementById('draftTitle');
+  if(!box || !inp) return;
+  const raw = inp.value.trim();
+  if(!raw){ box.classList.add('hidden'); lastParsed = null; return; }
+  const p = docCauViec(raw);
+  const hasSomething = p.dueAt || p.priority!=='normal' || p.repeat!=='none';
+  if(!hasSomething || p.title === raw){ box.classList.add('hidden'); lastParsed = null; return; }
+  lastParsed = p;
+  const chips = [];
+  if(p.dueAt) chips.push(`📅 ${fmtDayLabelShort(p.dueAt)} · ${p.dueAt.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}`);
+  if(p.priority!=='normal') chips.push((PRIORITY[p.priority]||{}).label || p.priority);
+  if(p.repeat!=='none') chips.push(`🔁 ${REPEAT_LABEL[p.repeat]||''}`);
+  box.innerHTML = `
+    <div class="pp-l">APP HIỂU LÀ</div>
+    <div class="pp-r">Việc: <b>${escapeHtml(p.title)}</b></div>
+    <div>${chips.map(c=>`<span class="pp-chip">${c}</span>`).join('')}
+      <span class="pp-chip pp-x" onclick="boQuaDoanCau()">Bỏ đoán</span></div>`;
+  box.classList.remove('hidden');
+}
+function fmtDayLabelShort(d){
+  const t0 = new Date(); t0.setHours(0,0,0,0);
+  const dd = new Date(d); dd.setHours(0,0,0,0);
+  const cach = Math.round((dd - t0)/86400000);
+  if(cach===0) return 'Hôm nay';
+  if(cach===1) return 'Mai';
+  if(cach===2) return 'Mốt';
+  return d.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit'});
+}
+function boQuaDoanCau(){
+  lastParsed = null;
+  const box = document.getElementById('parsePreview');
+  if(box) box.classList.add('hidden');
+}
+
 function setQuickDue(kind){
   const d = new Date();
   if(kind==='1h'){ d.setHours(d.getHours()+1, d.getMinutes(), 0, 0); }
@@ -941,14 +1168,22 @@ function resetDraftUI(){
   collapseComposer();
 }
 function addTask(){
-  const title = document.getElementById('draftTitle').value.trim();
-  if(!title) return;
+  const raw = document.getElementById('draftTitle').value.trim();
+  if(!raw) return;
   const dueVal = document.getElementById('draftDue').value;
   const notes = document.getElementById('draftNotes').value.trim();
+
+  /* Nếu app đã đọc được ngày giờ từ câu thì dùng, trừ khi anh tự chọn hạn ở tuỳ chọn */
+  const p = lastParsed;
+  const title = (p && p.title) ? p.title : raw;
+  let dueAt = dueVal ? new Date(dueVal) : (p && p.dueAt ? p.dueAt : null);
+  const priority = (draft.priority !== 'normal') ? draft.priority : (p ? p.priority : 'normal');
+  const repeat = (draft.repeat !== 'none') ? draft.repeat : (p ? p.repeat : 'none');
+
   tasks.unshift({
     id: uid(), title, notes,
-    dueAt: dueVal ? new Date(dueVal).toISOString() : null,
-    priority: draft.priority, repeat: draft.repeat,
+    dueAt: dueAt ? dueAt.toISOString() : null,
+    priority: priority, repeat: repeat,
     remindBefore: draft.remindBefore, repeatRemind: draft.repeatRemind,
     tags: draft.tags.slice(),
     status: "pending", createdAt: Date.now(), completedAt: null,
@@ -958,6 +1193,7 @@ function addTask(){
   document.getElementById('draftTitle').value='';
   document.getElementById('draftDue').value='';
   document.getElementById('draftNotes').value='';
+  boQuaDoanCau();
   resetDraftUI();
   renderTasks();
 }
