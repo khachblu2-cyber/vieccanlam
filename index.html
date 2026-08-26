@@ -1,6 +1,6 @@
 <!--
 ==================================================================
-  VIỆC CẦN LÀM & SỔ THU CHI — V1.5.3  (18/08/2026)
+  VIỆC CẦN LÀM & SỔ THU CHI — V1.5.4  (26/08/2026)
   Tệp gốc: Viec-can-lam-V1_4_0.html (md5 25fb19435c217ba4b838579757587774)
 ------------------------------------------------------------------
   THAY ĐỔI SO VỚI V1.4.0
@@ -53,6 +53,27 @@
      gấp/quan trọng, mỗi ngày/tuần/tháng/quý.
   g. Bỏ dòng "Lưu ngay trên máy…", trạng thái rút gọn còn
      "☁️ Đã đồng bộ Firebase".
+------------------------------------------------------------------
+  V1.5.4 (26/08/2026)
+  h. SỬA LỖI THÔNG BÁO ĐẨY (lỗi có từ bản đầu): hàm getToken không được
+     truyền serviceWorkerRegistration nên thư viện Firebase đi tìm file
+     firebase-messaging-sw.js ở GỐC tên miền, trong khi app nằm ở thư mục
+     con /vieccanlam/. Lấy mã thiết bị luôn thất bại, lỗi lại bị nuốt im
+     bằng console.warn nên collection viec_fcmtokens rỗng => máy chủ không
+     biết gửi cho ai => đóng app là không bao giờ có thông báo.
+     Nay: giữ lại đăng ký SW, truyền vào getToken, và BÁO LỖI RÕ RÀNG.
+  i. Thêm dòng trạng thái dưới hàng nút, 3 mức:
+     🔔 Nhận thông báo cả khi đóng app / ⚠️ Chỉ nhắc khi đang mở app /
+     🔕 Chưa bật thông báo.
+  j. Ngày tháng: thống nhất kiểu 26/08 ở mọi chỗ (trước bị ra 26-08 do
+     iOS đọc locale khác). Thanh đầu đổi thành "T4 · 26/08/2026" cho đủ
+     chữ, không bị cắt mất như trước.
+  k. 4 ô thống kê gộp lại 1 hàng ngang trên điện thoại (trước chiếm 2
+     hàng, đẩy danh sách việc xuống thấp).
+  l. Bộ đọc câu hiểu thêm giờ viết bằng DẤU CHẤM: 6.00, 18.30 — kiểu mà
+     iPhone hay tự viết khi đọc chính tả "6 giờ". Đã chặn không nhầm số
+     tiền 5.000.000 / 1.500.000 / 2.5 kg thành giờ.
+  m. Ô nhập đổi chữ gợi ý thành "Nhập công việc".
 ------------------------------------------------------------------
   CÒN LẠI PHẢI LÀM: upload firebase-messaging-sw.js cùng thư mục;
   sửa index.js cho khớp mục 5; tối ưu thêm giao diện điện thoại.
@@ -133,9 +154,11 @@
   .stat .l{font-size:12.5px;color:var(--muted);margin-top:3px;letter-spacing:.3px;}
   .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:3px;}
   @media (max-width:820px){
-    .stats{flex-wrap:wrap;gap:9px;margin:12px 0;}
-    .stat{flex:1 1 46%;padding:10px 12px;}
-    .stat .v{font-size:22px;} .stat .l{font-size:11.5px;}
+    .stats{flex-wrap:nowrap;gap:7px;margin:11px 0;}
+    .stat{flex:1 1 0;min-width:0;padding:9px 6px;text-align:center;}
+    .stat .v{font-size:21px;}
+    .stat .l{font-size:9.5px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .dot{width:6px;height:6px;margin-right:5px;vertical-align:2px;}
   }
 
   /* ===== Bố cục 2 cột tab việc ===== */
@@ -341,7 +364,7 @@
       <button class="tab-btn" id="tabBtnLedger" onclick="switchTab('ledger')">Sổ thu chi</button>
     </div>
     <div class="top-spacer"></div>
-    <div class="font-mono" id="todayLabel" style="font-size:12px;color:#969696;letter-spacing:.4px;"></div>
+    <div class="font-mono" id="todayLabel" style="font-size:12.5px;color:#969696;letter-spacing:.3px;white-space:nowrap;"></div>
     <div class="top-btns">
       <input type="file" id="backupFileInput" accept="application/json" class="hidden" onchange="importBackup(event)">
       <button class="icon-sm-btn tap" id="notifBtn" onclick="requestNotificationPermission()" title="Bật thông báo nhắc việc">🔕</button>
@@ -349,19 +372,22 @@
       <button class="icon-sm-btn tap" onclick="document.getElementById('backupFileInput').click()" title="Nhập dữ liệu từ file sao lưu">⬆</button>
       <button class="icon-sm-btn tap" onclick="toggleSearch()" title="Tìm việc">🔍</button>
     </div>
-    <div class="ver-label">V1.5.3</div>
+    <div class="ver-label">V1.5.4</div>
   </div>
 </div>
-<div class="wrap"><div class="save-status" id="cloudStatus" style="margin-top:6px;"></div></div>
+<div class="wrap" style="margin-top:6px;">
+  <div class="save-status" id="cloudStatus"></div>
+  <div class="save-status" id="notifStatus" style="margin-top:2px;"></div>
+</div>
 
 <!-- ===== TAB VIỆC CẦN LÀM ===== -->
 <div id="tasksTab">
   <div class="wrap">
     <div class="stats">
       <div class="stat"><div class="v"><span class="dot" style="background:#C0492E;"></span><span id="statOverdue">0</span></div><div class="l">QUÁ HẠN</div></div>
-      <div class="stat"><div class="v"><span class="dot" style="background:#B07C1E;"></span><span id="statToday">0</span></div><div class="l">ĐẾN HẠN HÔM NAY</div></div>
+      <div class="stat"><div class="v"><span class="dot" style="background:#B07C1E;"></span><span id="statToday">0</span></div><div class="l">HÔM NAY</div></div>
       <div class="stat"><div class="v"><span class="dot" style="background:#2857A6;"></span><span id="statPending">0</span></div><div class="l">ĐANG MỞ</div></div>
-      <div class="stat"><div class="v"><span class="dot" style="background:#3F7A5C;"></span><span id="statWeekDone">0</span></div><div class="l">XONG TRONG TUẦN</div></div>
+      <div class="stat"><div class="v"><span class="dot" style="background:#3F7A5C;"></span><span id="statWeekDone">0</span></div><div class="l">XONG TUẦN</div></div>
     </div>
 
     <div class="task-main">
@@ -447,7 +473,7 @@
     <div id="parsePreview" class="parse-preview hidden"></div>
     <div class="main-input-row">
       <button class="icon-btn tap" id="optToggleBtn" onclick="toggleExpand()" title="Tuỳ chọn nhắc việc">⚙</button>
-      <input type="text" class="title-input" id="draftTitle" placeholder="Nhập việc… vd: mai 8h gọi anh Hiệp" oninput="onDraftTitleInput()" onkeydown="if(event.key==='Enter')addTask()">
+      <input type="text" class="title-input" id="draftTitle" placeholder="Nhập công việc" oninput="onDraftTitleInput()" onkeydown="if(event.key==='Enter')addTask()">
       <button class="icon-btn primary tap" onclick="addTask()" title="Thêm việc">＋</button>
     </div>
   </div>
@@ -637,6 +663,7 @@ window.firebaseConfig = {
 let fsDb = null;
 let fsReady = false;
 let vcMessaging = null;
+let vcTokenOk = false;
 // ⚠️ Dán VAPID key lấy trong Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
 const VC_VAPID_KEY = "BOZk5fPcJ0V9uJl14EGIeTg8GGf2JIJpHlXDhfIYknhl0Je2I7wgoVjvDqFbsDwdwzkcoHQRgr8ibfN7cTXOze0";
 let firestoreListeners = [];
@@ -806,18 +833,21 @@ function fmtMinutes(m){
   return m+" phút";
 }
 function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+const THU_NGAN = ['CN','T2','T3','T4','T5','T6','T7'];
+function hai(n){ return String(n).padStart(2,'0'); }
+function dm(d){ d = new Date(d); return hai(d.getDate()) + '/' + hai(d.getMonth()+1); }
+function dmy(d){ d = new Date(d); return dm(d) + '/' + d.getFullYear(); }
 function fmtTime(iso){ if(!iso) return null; return new Date(iso).toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"}); }
 function fmtCreatedAt(ts){
   if(!ts) return "";
   const d = new Date(ts);
   const time = d.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});
-  const date = d.toLocaleDateString("vi-VN",{day:"2-digit",month:"2-digit"});
-  return `${time} · ${date}`;
+  return `${time} · ${dm(d)}`;
 }
 function fmtDayLabel(iso){
   const d = startOfDay(iso), today = startOfDay(new Date());
   const diff = Math.round((d-today)/86400000);
-  const dateStr = d.toLocaleDateString("vi-VN",{day:"2-digit",month:"2-digit"});
+  const dateStr = dm(d);
   if(diff===0) return `HÔM NAY · ${dateStr}`;
   if(diff===1) return `NGÀY MAI · ${dateStr}`;
   if(diff===-1) return `HÔM QUA · ${dateStr}`;
@@ -1014,11 +1044,16 @@ function docCauViec(raw){
   }
 
   /* --- giờ: 8h, 8h30, 8 gio, 14:30 --- */
-  m = s.match(/\b(\d{1,2})\s*(?:h|gio|:)\s*(\d{1,2})?\b/);
-  if(m && Number(m[1]) <= 24){
+  /* Nhận: 8h, 8h30, 8 gio, 14:30, và 6.00 / 18.30 (kiểu iPhone đọc chính tả hay viết).
+     Dấu chấm chỉ nhận khi sau nó đúng 2 chữ số và không có dấu chấm nối tiếp,
+     để KHÔNG nhầm số tiền 5.000.000 hay 1.500.000 thành giờ. */
+  m = s.match(/\b(\d{1,2})\s*(?:h|gio)\s*(\d{1,2})?\b|\b(\d{1,2})\s*[:.]\s*(\d{2})\b(?![\d.])/);
+  const gioTho = m ? Number(m[1] !== undefined ? m[1] : m[3]) : null;
+  const phutTho = m ? Number((m[2] !== undefined ? m[2] : m[4]) || 0) : null;
+  if(m && gioTho <= 24 && phutTho <= 59){
     matched.push(m[0].trim());
-    gio = Number(m[1]);
-    phut = m[2] ? Number(m[2]) : 0;
+    gio = gioTho;
+    phut = phutTho;
     if(gio <= 12){
       if(buoi === 'chieu' || buoi === 'toi'){ if(gio < 12) gio += 12; }
       else if(buoi === 'trua' && gio < 11){ gio += 12; }
@@ -1092,7 +1127,7 @@ function fmtDayLabelShort(d){
   if(cach===0) return 'Hôm nay';
   if(cach===1) return 'Mai';
   if(cach===2) return 'Mốt';
-  return d.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit'});
+  return THU_NGAN[d.getDay()] + ' ' + dm(d);
 }
 function boQuaDoanCau(){
   lastParsed = null;
@@ -1256,7 +1291,7 @@ function toggleSnooze(id){ snoozeOpenId = snoozeOpenId===id ? null : id; renderT
 function renderTasks(){
   const now = new Date();
   const lbl = document.getElementById('todayLabel');
-  if(lbl) lbl.textContent = now.toLocaleDateString("vi-VN",{weekday:"long",day:"2-digit",month:"long"}).toUpperCase();
+  if(lbl) lbl.textContent = THU_NGAN[now.getDay()] + ' · ' + dmy(now);
 
   let overdue=0, today=0, done=0, weekDone=0;
   const weekAgo = Date.now() - 7*24*60*60*1000;
@@ -1381,7 +1416,7 @@ function fmtGap(ms){
 }
 function fmtShortDateTime(iso){
   const d = new Date(iso);
-  return d.toLocaleDateString("vi-VN",{day:"2-digit",month:"2-digit"}) + " " + d.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});
+  return dm(d) + " " + d.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});
 }
 function escapeHtml(str){
   const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
@@ -2509,16 +2544,80 @@ function checkBackupReminder(){
 /* ===== THÔNG BÁO KHI QUÁ HẠN ===== */
 function updateNotifBtn(){
   const btn = document.getElementById('notifBtn');
-  if(!("Notification" in window)){ btn.textContent = "🔕"; btn.title = "Trình duyệt này không hỗ trợ thông báo"; return; }
-  if(Notification.permission === "granted"){ btn.textContent = "🔔"; btn.title = "Đã bật thông báo khi quá hạn"; }
-  else{ btn.textContent = "🔕"; btn.title = "Bấm để bật thông báo khi quá hạn"; }
+  const st = document.getElementById('notifStatus');
+  function datTrangThai(txt, mau){
+    if(!st) return;
+    st.textContent = txt;
+    st.style.color = mau;
+  }
+  if(!btn) return;
+
+  if(!("Notification" in window)){
+    btn.textContent = "🔕"; btn.title = "Thiết bị này không hỗ trợ thông báo";
+    datTrangThai("⚠️ Thiết bị không hỗ trợ thông báo", "#A3341C");
+    return;
+  }
+  if(Notification.permission !== "granted"){
+    btn.textContent = "🔕"; btn.title = "Bấm để bật thông báo";
+    datTrangThai("🔕 Chưa bật thông báo — bấm chuông để bật", "#A3341C");
+    return;
+  }
+  btn.textContent = "🔔";
+  if(vcTokenOk){
+    btn.title = "Đã bật — nhận thông báo cả khi đóng app";
+    datTrangThai("🔔 Nhận thông báo cả khi đóng app", "#2C5A42");
+  }else{
+    btn.title = "Chỉ nhắc khi đang mở app — bấm chuông để thử đăng ký lại";
+    datTrangThai("⚠️ Chỉ nhắc khi đang MỞ app — bấm chuông để bật đẩy", "#7A5A17");
+  }
 }
+let vcSwReg = null;
 function setupVcMessaging(){
   if(!firebase.messaging || !firebase.messaging.isSupported || !firebase.messaging.isSupported()){ return; }
   try{
     vcMessaging = firebase.messaging();
-    navigator.serviceWorker.register('firebase-messaging-sw.js').catch(e=>console.warn("SW đăng ký lỗi:", e));
+    /* Đăng ký service worker THEO ĐƯỜNG DẪN TƯƠNG ĐỐI và GIỮ LẠI kết quả.
+       Nếu không giữ, thư viện Firebase sẽ tự đi tìm file ở gốc tên miền
+       (khachblu2-cyber.github.io/firebase-messaging-sw.js) — chỗ đó không có
+       file nên lấy mã thiết bị luôn thất bại. Đây là lỗi của các bản ≤ V1.5.3. */
+    navigator.serviceWorker.register('firebase-messaging-sw.js')
+      .then(reg=>{ vcSwReg = reg; dangKyTokenDay(true); })
+      .catch(e=>{ console.warn("SW đăng ký lỗi:", e); updateNotifBtn(); });
   }catch(e){ console.warn("Messaging không khả dụng:", e); }
+}
+
+/* Lấy mã thiết bị và lưu lên máy chủ. imLang=true thì không hiện thông báo lỗi. */
+async function dangKyTokenDay(imLang){
+  if(!("Notification" in window) || Notification.permission !== "granted"){ updateNotifBtn(); return false; }
+  if(!vcMessaging || !fsDb){
+    if(!imLang) alert("Chưa kết nối được Firebase nên không đăng ký nhận thông báo khi đóng app được. Thử lại sau khi có mạng.");
+    updateNotifBtn(); return false;
+  }
+  try{
+    if(!vcSwReg && navigator.serviceWorker){
+      vcSwReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    }
+    const token = await vcMessaging.getToken({
+      vapidKey: VC_VAPID_KEY,
+      serviceWorkerRegistration: vcSwReg || undefined
+    });
+    if(!token) throw new Error("Không nhận được mã thiết bị");
+    await fsDb.collection('viec_fcmtokens').doc(token).set({
+      token, capNhat: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    vcTokenOk = true;
+    updateNotifBtn();
+    return true;
+  }catch(e){
+    vcTokenOk = false;
+    updateNotifBtn();
+    console.warn("Không lấy được mã thiết bị:", e);
+    if(!imLang){
+      alert("Đã bật thông báo trong app, NHƯNG chưa đăng ký được nhận thông báo khi đóng app.\n\nLý do: " + (e && e.message ? e.message : e) +
+            "\n\nApp vẫn nhắc bình thường khi đang mở. Thử lại: đóng app, mở lại rồi bấm chuông lần nữa.");
+    }
+    return false;
+  }
 }
 function requestNotificationPermission(){
   if(!("Notification" in window)){
@@ -2529,17 +2628,8 @@ function requestNotificationPermission(){
     updateNotifBtn();
     if(p==="granted"){
       new Notification("Đã bật thông báo", { body: "Việc có đặt hạn: nhắc theo hạn. Việc không đặt hạn: nhắc sau 4 giờ nếu chưa xong." });
-      // Đăng ký thêm thông báo đẩy (chạy cả khi đóng app), nếu trình duyệt hỗ trợ
-      if(vcMessaging && fsDb){
-        try{
-          const token = await vcMessaging.getToken({vapidKey: VC_VAPID_KEY});
-          if(token){
-            await fsDb.collection('viec_fcmtokens').doc(token).set({
-              token, capNhat: firebase.firestore.FieldValue.serverTimestamp()
-            });
-          }
-        }catch(e){ console.warn("Không lấy được token đẩy:", e); }
-      }
+      // Đăng ký nhận thông báo cả khi đóng app — báo lỗi rõ ràng nếu hỏng
+      await dangKyTokenDay(false);
     }else if(p==="denied"){
       alert("Bạn đã từ chối quyền thông báo. Muốn bật lại, vào cài đặt trình duyệt cho phép thông báo cho trang này.");
     }
