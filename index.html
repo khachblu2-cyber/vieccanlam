@@ -1,6 +1,6 @@
 <!--
 ==================================================================
-  VIỆC CẦN LÀM & SỔ THU CHI — V1.5.4  (26/08/2026)
+  VIỆC CẦN LÀM & SỔ THU CHI — V1.5.5  (23/09/2026)
   Tệp gốc: Viec-can-lam-V1_4_0.html (md5 25fb19435c217ba4b838579757587774)
 ------------------------------------------------------------------
   THAY ĐỔI SO VỚI V1.4.0
@@ -74,6 +74,15 @@
      iPhone hay tự viết khi đọc chính tả "6 giờ". Đã chặn không nhầm số
      tiền 5.000.000 / 1.500.000 / 2.5 kg thành giờ.
   m. Ô nhập đổi chữ gợi ý thành "Nhập công việc".
+------------------------------------------------------------------
+  V1.5.5 (23/09/2026)
+  n. Tab SỔ CHI TIỀN: ô chọn tên nay hiện TẤT CẢ tên, bỏ bộ lọc
+     trackLedger. Trước đây chỉ hiện tên đã tích "Theo dõi Sổ chi tiền",
+     nên người chưa tích không mở ra xem được dù giao dịch vẫn còn đủ
+     trong dữ liệu — dễ tưởng là mất sổ.
+     Tên đã tích vẫn xếp lên đầu danh sách và có ký hiệu 📒.
+     Luỹ kế: ai có số dư đầu kỳ thì chạy tiếp từ số đó, ai không có thì
+     bắt đầu từ 0 rồi cộng dồn — phần tính toán không đổi, vốn đã đúng.
 ------------------------------------------------------------------
   CÒN LẠI PHẢI LÀM: upload firebase-messaging-sw.js cùng thư mục;
   sửa index.js cho khớp mục 5; tối ưu thêm giao diện điện thoại.
@@ -372,7 +381,7 @@
       <button class="icon-sm-btn tap" onclick="document.getElementById('backupFileInput').click()" title="Nhập dữ liệu từ file sao lưu">⬆</button>
       <button class="icon-sm-btn tap" onclick="toggleSearch()" title="Tìm việc">🔍</button>
     </div>
-    <div class="ver-label">V1.5.4</div>
+    <div class="ver-label">V1.5.5</div>
   </div>
 </div>
 <div class="wrap" style="margin-top:6px;">
@@ -611,7 +620,7 @@
         <div class="card-head">
           <div>
             <div class="card-title">Sổ chi tiền theo người</div>
-            <div class="card-sub">Nợ / Có / Luỹ kế — chỉ hiện những tên đã đánh dấu theo dõi</div>
+            <div class="card-sub">Nợ / Có / Luỹ kế — chọn được mọi tên · 📒 là tên đã đánh dấu theo dõi</div>
           </div>
           <div class="card-tools">
             <select id="detailReceiverSelect" onchange="onDetailReceiverChange()" style="width:220px;"></select>
@@ -1911,8 +1920,16 @@ function populateDetailReceiverSelect(){
   const el = document.getElementById('detailReceiverSelect');
   if(!el) return;
   const cur = el.value;
-  const tracked = ledger.names.filter(n=>n.trackLedger);
-  el.innerHTML = tracked.length ? tracked.map(n=>`<option value="${escapeHtml(n.name)}">${escapeHtml(n.name)}</option>`).join('') : `<option value="">-- Chưa có tên nào được đánh dấu --</option>`;
+  /* V1.5.5: hiện TẤT CẢ tên, không lọc theo trackLedger nữa.
+     Trước đây chỉ hiện tên đã đánh dấu theo dõi, nên người chưa đánh dấu
+     không mở ra xem được dù dữ liệu vẫn còn — gây tưởng là mất dữ liệu.
+     Tên đã đánh dấu vẫn được xếp lên đầu và có ký hiệu 📒 cho dễ tìm. */
+  const daDanhDau = ledger.names.filter(n=>n.trackLedger);
+  const conLai = ledger.names.filter(n=>!n.trackLedger);
+  const dsSapXep = daDanhDau.concat(conLai);
+  el.innerHTML = dsSapXep.length
+    ? dsSapXep.map(n=>`<option value="${escapeHtml(n.name)}">${n.trackLedger?'📒 ':''}${escapeHtml(n.name)}</option>`).join('')
+    : `<option value="">-- Chưa có tên nào --</option>`;
   if(cur) el.value = cur;
   const name = el.value;
   const obEl = document.getElementById('detailOpeningBalance');
